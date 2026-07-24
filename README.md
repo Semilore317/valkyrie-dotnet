@@ -145,6 +145,14 @@ A background service seeds and drives synthetic order flow through the same `Ord
 , so the book and trade tape stay live with no manual input. Each intrument gets its own loop; a random fair value plus
 a Poisson arrival process for order timing, mixing resting liquidity, cancels and crossing orders.
 
+The simulator is disabled by default so API tests remain deterministic. You can enable it locally with the checked-in launch profile:
+
+```powershell
+dotnet run --project Valkyrie --launch-profile simulated-market
+```
+
+The variable applies only to that PowerShell session. In Rider, add `MarketSimulatorConfiguration__Enabled=true` to the Valkyrie run configuration's environment variables, then run the host normally.
+
 The flow source sits behind an interface:  `IMarketDataSource`, since I'm going to add a historical replay source later
 without modifying the host, [LOBSTER](https://lobsterdata.com/home) looks appealing... 
 
