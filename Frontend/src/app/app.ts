@@ -53,9 +53,7 @@ export class App implements OnInit, OnDestroy {
   readonly tape = signal<TapeRow[]>([]);
   readonly workingOrders = signal<WorkingOrder[]>([]);
   readonly connectionStatus = signal('CONNECTING');
-  readonly dark = signal(
-    typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
-  );
+  readonly dark = signal(this.getInitialTheme());
   readonly activeId = signal(1);
 
   readonly instruments = signal<Instrument[]>([
@@ -127,7 +125,11 @@ export class App implements OnInit, OnDestroy {
   }
 
   toggleTheme(): void {
-    this.dark.update(d => !d);
+    this.dark.update(isDark => !isDark);
+
+    const theme = this.dark() ? 'dark' : 'light';
+
+    localStorage.setItem('theme', theme);
     this.applyTheme();
   }
 
@@ -271,5 +273,22 @@ export class App implements OnInit, OnDestroy {
         isBest: i === 0
       };
     });
+  }
+
+  private getInitialTheme(): boolean{
+    if(typeof window === 'undefined'){
+      return false;
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+
+    if(savedTheme === 'dark')
+      return true;
+
+    if(savedTheme === 'light')
+      return false;
+
+    //first visit: follow the device/broswer prefernce
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 }

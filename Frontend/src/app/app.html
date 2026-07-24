@@ -246,6 +246,59 @@
           </button>
         </form>
       </section>
+
+      <section class="panel">
+        <div class="phead">
+          <h2>Working Orders</h2>
+          <span class="meta">
+            {{ workingOrders().length }} resting
+          </span>
+        </div>
+
+        <div class="orders">
+          @for (order of workingOrders(); track order.orderId) {
+            <article class="orow">
+              <span
+                class="sidechip"
+                [class.buy]="order.side === 'buy'"
+                [class.sell]="order.side === 'sell'"
+              >
+                {{ order.side }}
+              </span>
+
+              <div class="oinfo">
+                <span class="op num">
+                  {{ (order.price / 100).toFixed(2) }}
+                  <small>{{ order.price }}¢</small>
+                </span>
+
+                <span class="om">
+                  {{ order.symbol }} · {{ order.quantity }} sh
+                </span>
+              </div>
+
+
+              <span class="ofill num">
+               <b>{{ order.filledQuantity }}/{{ order.quantity }}</b>
+               <br>
+               filled
+             </span>
+
+
+              <button
+                class="cancel"
+                type="button"
+                (click)="cancelOrder(order)"
+                [attr.aria-label]="'Cancel Order ' + order.orderId"
+              >
+                ×
+              </button>
+            </article>
+          } @empty {
+              <p class="empty">No resting orders...</p>
+          }
+        </div>
+      </section>
     </div>
     <!--Orders Panel -->
     <section class="panel tape-panel">
