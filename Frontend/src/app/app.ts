@@ -40,6 +40,12 @@ interface TapeRow {
   filledAt: string;
 }
 
+interface TracePoint {
+  price: number;
+  x: number;
+  y: number;
+}
+
 @Component({
   selector: 'app-root',
   imports: [DatePipe],
@@ -52,6 +58,7 @@ export class App implements OnInit, OnDestroy {
 
   readonly tape = signal<TapeRow[]>([]);
   readonly midTrace = signal<number[]>([]);
+  readonly traceHover = signal<TracePoint | null>(null);
   private traceTimer?: number;
   readonly workingOrders = signal<WorkingOrder[]>([]);
   readonly connectionStatus = signal('CONNECTING');
@@ -117,54 +124,43 @@ export class App implements OnInit, OnDestroy {
       .reduce((total, level) => total + level.quantity, 0)
   );
 
-  readonly tracePath = computed(() => {
+  readonly tracePoints = computed<TracePoint[]>(() => {
     const prices = this.midTrace();
 
-    if (prices.length < 2)
-      return '';
+    if (prices.length === 0) {
+      return [];
+    }
 
     const width = 500;
     const height = 46;
-    const padding = 4;
-
+    const horizontalPadding = 10;
+    const verticalPadding = 12;
     const observedMin = Math.min(...prices);
     const observedMax = Math.max(...prices);
-
-    const centre = (observedMin + observedMax) / 2;
-    const range = Math.max(12, observedMax - observedMin + 4);
-
-    return prices.map((price, index) => {
-      const x = (index / (prices.length - 1)) * width;
-      const y = height - padding - ((price - observedMin) / range) * (height - padding * 2);
-
-      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    }).join(' ');
-  });
-
-  readonly traceTip  = computed(() =>{
-    const prices = this.midTrace();
-
-    if (prices.length === 0)
-      return null;
-
-    const width = 500;
-    const height = 46;
-    const padding = 4;
-
-    const observedMin = Math.min(...prices);
-    const observedMax = Math.max(...prices);
-
     const centre = (observedMin + observedMax) / 2;
     const range = Math.max(12, observedMax - observedMin + 4);
     const minimum = centre - range / 2;
 
-    const lastPrice = prices[prices.length - 1];
-    const y = height - padding - ((lastPrice - minimum) / range) * (height - padding * 2);
+    return prices.map((price, index) => {
+      const x = prices.length === 1
+        ? width - horizontalPadding
+        : horizontalPadding + (index / (prices.length - 1)) * (width - horizontalPadding * 2);
+      const y = height - verticalPadding -
+        ((price - minimum) / range) * (height - verticalPadding * 2);
 
-    return{
-      x: width,
-      y
-    };
+      return { price, x, y };
+    });
+  });
+
+  readonly tracePath = computed(() =>
+    this.tracePoints().map((point, index) =>
+      `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`,
+    ).join(' '),
+  );
+
+  readonly traceTip = computed(() => {
+    const points = this.tracePoints();
+    return points.length === 0 ? null : points[points.length - 1];
   });
 
   ngOnInit(): void {
@@ -195,7 +191,28 @@ export class App implements OnInit, OnDestroy {
     this.activeId.set(id);
     this.asks.set([]);
     this.bids.set([]);
+    this.midTrace.set([]);
+    this.traceHover.set(null);
     this.subscribeToInstrument(id);
+  }
+
+  onTraceMove(event: MouseEvent): void {
+    const points = this.tracePoints();
+    const svg = event.currentTarget as SVGSVGElement;
+
+    if (points.length === 0 || svg.clientWidth === 0) {
+      return;
+    }
+
+    const bounds = svg.getBoundingClientRect();
+    const fraction = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+    const index = Math.round(fraction * (points.length - 1));
+
+    this.traceHover.set(points[index]);
+  }
+
+  clearTraceHover(): void {
+    this.traceHover.set(null);
   }
 
   setSide(s: 'buy' | 'sell'): void {

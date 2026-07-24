@@ -125,6 +125,8 @@
           viewBox="0 0 500 46"
           preserveAspectRatio="none"
           aria-label="Mid price trace"
+          (mousemove)="onTraceMove($event)"
+          (mouseleave)="clearTraceHover()"
         >
           <path
             [attr.d]="tracePath()"
@@ -133,23 +135,26 @@
             stroke-width="1.7"
           />
 
-          @if(traceTip(); as tip){
-            <circle
-            class="trace-tip-halo"
-            [attr.cx]="tip.x"
-            [attr.cy]="tip.y"
-            r="10"
-            />
-            <circle
-              class="trace-tip"
-              [attr.cx]="tip.x"
-              [attr.cy]="tip.y"
-              r="5"
-            />
-          }
         </svg>
 
-        <span class="tpx num">
+        @if (traceTip(); as tip) {
+          <span class="trace-tip-halo"
+                [style.left.%]="tip.x / 5"
+                [style.top.%]="tip.y / .46"></span>
+          <span class="trace-tip"
+                [style.left.%]="tip.x / 5"
+                [style.top.%]="tip.y / .46"></span>
+        }
+
+        @if (traceHover(); as point) {
+          <span class="trace-tooltip num"
+                [style.left.%]="point.x / 5"
+                [style.top.%]="point.y / .46">
+            {{ (point.price / 100).toFixed(2) }}
+          </span>
+        }
+
+        <span class="tpx num" [class.hidden]="traceHover() !== null">
           {{ mid() == null ? '-' : (mid()! / 100).toFixed(2) }}
         </span>
       </div>
