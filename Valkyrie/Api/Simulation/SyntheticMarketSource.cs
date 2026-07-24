@@ -26,7 +26,7 @@ public class SyntheticMarketSource(
             .Select(instrument => RunInstrument(instrument, token));
         return Task.WhenAll(loops);
     }
-    
+
     private void AddLiquidity(SimulatedInstrument instrument, long fair, Random rng, List<(long, Side)> resting)
     {
         var buy = rng.NextDouble() < 0.5;
@@ -94,17 +94,42 @@ public class SyntheticMarketSource(
         ));
     }
 
-    private static long RandomWalk(long fair, SimulatedInstrument instrument, Random rng)
+    /// <summary>
+    /// implements a Geometric Brownian Motion(GBM) step with standard normal sampling (Box-Muller transform)
+    /// combined with occasional Poisson-style jumps
+    /// </summary>
+    private static long RandomWalk(long fair, SimulatedInstrument? instrument, Random rng)
     {
-        var step = (rng.Next(0, 3) - 1) * instrument.TickSize;
-        var reverted = fair + step;
+        // box-muller transform for actual noise ~N(0,1)
+        double u1 = 1.0 - rng.NextDouble();
+        double u2 = 1.0 - rng.NextDouble();
+        double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
 
-        if (reverted > instrument.SeedPrice && rng.NextDouble() < 0.55)
-            reverted -= instrument.TickSize;
-        if (reverted < instrument.SeedPrice && rng.NextDouble() < 0.55)
-            reverted += instrument.TickSize;
+        // volatility params (0.15% per tick + light mean reversion toward seed)
+        const double volatility = 0.0015;
+        var drift = (fair - instrument!.SeedPrice) * -0.0005;
 
-        return Math.Max(instrument.TickSize, reverted);
+        // occasional regime jumps (2% chance of liquidity sweep)
+        var jump = 0.0;
+        if (rng.NextDouble() < 0.02)
+        {
+            jump = (rng.NextDouble() - 0.5) * 8 * instrument.TickSize;
+        }
+
+        // multiplicative log-return delta
+        var delta = (fair * volatility * randStdNormal) + drift + jump;
+        var newFair = fair + (long)Math.Round(delta);
+
+        // quantize strictly to tickSize grid
+        var remainder = newFair % instrument.TickSize;
+        if (remainder != 0)
+        {
+            newFair += (remainder < instrument.TickSize / 2)
+                ? -remainder
+                : (instrument.TickSize - remainder);
+        }
+
+        return Math.Max(instrument.TickSize, newFair);
     }
 
     private void TrimBook(SimulatedInstrument instrument, List<(long id, Side side)> resting, int cap = 40)
