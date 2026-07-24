@@ -1058,6 +1058,55 @@ form.entry {
   color: var(--ask);
 }
 
+.traceWrap{
+  position: relative;
+  height: 46px;
+  overflow: hidden;
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--line);
+}
+
+.traceWrap svg{
+  display: block;
+  width: 100%;
+  height: 45px;
+  padding-top: 12px;
+}
+
+.traceWrap .tlab{
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  padding: 5px 12px;
+  color: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.traceWrap .tpx{
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+  right: 12px;
+  color: var(--ink-2);
+  font-size: 10px;
+}
+
+.trace-tip-halo{
+  fill: var(--accent-dim);
+}
+
+.trace-tip{
+  fill: var(--bg-2);
+  stroke: var(--accent);
+  stroke-width: 1.8;
+  background: var(--bg-2);
+  color: var(--accent-dim);
+}
+
 @keyframes print {
   from {
     background: var(--accent-dim);

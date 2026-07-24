@@ -118,6 +118,42 @@
         </span>
       </div>
 
+      <div class="traceWrap">
+        <span class="tlab">Mid Trace · 90s</span>
+
+        <svg
+          viewBox="0 0 500 46"
+          preserveAspectRatio="none"
+          aria-label="Mid price trace"
+        >
+          <path
+            [attr.d]="tracePath()"
+            fill="none"
+            stroke="var(--accent)"
+            stroke-width="1.7"
+          />
+
+          @if(traceTip(); as tip){
+            <circle
+            class="trace-tip-halo"
+            [attr.cx]="tip.x"
+            [attr.cy]="tip.y"
+            r="10"
+            />
+            <circle
+              class="trace-tip"
+              [attr.cx]="tip.x"
+              [attr.cy]="tip.y"
+              r="5"
+            />
+          }
+        </svg>
+
+        <span class="tpx num">
+          {{ mid() == null ? '-' : (mid()! / 100).toFixed(2) }}
+        </span>
+      </div>
+
       <div class="colhead">
         <span>Price · USD</span>
         <span>Size</span>
@@ -295,7 +331,7 @@
               </button>
             </article>
           } @empty {
-              <p class="empty">No resting orders...</p>
+            <p class="empty">No resting orders...</p>
           }
         </div>
       </section>

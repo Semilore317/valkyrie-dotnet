@@ -51,6 +51,8 @@ export class App implements OnInit, OnDestroy {
   private readonly api = inject(TradingApiService);
 
   readonly tape = signal<TapeRow[]>([]);
+  readonly midTrace = signal<number[]>([]);
+  private traceTimer?: number;
   readonly workingOrders = signal<WorkingOrder[]>([]);
   readonly connectionStatus = signal('CONNECTING');
   readonly dark = signal(this.getInitialTheme());
@@ -115,13 +117,67 @@ export class App implements OnInit, OnDestroy {
       .reduce((total, level) => total + level.quantity, 0)
   );
 
+  readonly tracePath = computed(() => {
+    const prices = this.midTrace();
+
+    if (prices.length < 2)
+      return '';
+
+    const width = 500;
+    const height = 46;
+    const padding = 4;
+
+    const observedMin = Math.min(...prices);
+    const observedMax = Math.max(...prices);
+
+    const centre = (observedMin + observedMax) / 2;
+    const range = Math.max(12, observedMax - observedMin + 4);
+
+    return prices.map((price, index) => {
+      const x = (index / (prices.length - 1)) * width;
+      const y = height - padding - ((price - observedMin) / range) * (height - padding * 2);
+
+      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(' ');
+  });
+
+  readonly traceTip  = computed(() =>{
+    const prices = this.midTrace();
+
+    if (prices.length === 0)
+      return null;
+
+    const width = 500;
+    const height = 46;
+    const padding = 4;
+
+    const observedMin = Math.min(...prices);
+    const observedMax = Math.max(...prices);
+
+    const centre = (observedMin + observedMax) / 2;
+    const range = Math.max(12, observedMax - observedMin + 4);
+    const minimum = centre - range / 2;
+
+    const lastPrice = prices[prices.length - 1];
+    const y = height - padding - ((lastPrice - minimum) / range) * (height - padding * 2);
+
+    return{
+      x: width,
+      y
+    };
+  });
+
   ngOnInit(): void {
     this.applyTheme();
     this.subscribeToInstrument(this.activeId());
+    this.startTraceSampling();
   }
 
   ngOnDestroy(): void {
     this.marketData.disconnect();
+
+    if(this.traceTimer !==  undefined)
+      window.clearInterval(this.traceTimer);
   }
 
   toggleTheme(): void {
@@ -258,6 +314,12 @@ export class App implements OnInit, OnDestroy {
   private applyBook(book: BookMessage): void {
     this.bids.set(book.bids);
     this.asks.set(book.asks);
+
+    if (book.bid !== null && book.ask !== null && this.midTrace().length === 0) {
+      const newMid = (book.bid + book.ask) / 2;
+
+      this.midTrace.set(Array.from({length: 90},() => newMid));
+    }
   }
 
   private toLadder(levels: Level[]): LadderRow[] {
@@ -275,20 +337,34 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
-  private getInitialTheme(): boolean{
-    if(typeof window === 'undefined'){
+  private getInitialTheme(): boolean {
+    if (typeof window === 'undefined') {
       return false;
     }
 
     const savedTheme = localStorage.getItem('theme');
 
-    if(savedTheme === 'dark')
+    if (savedTheme === 'dark')
       return true;
 
-    if(savedTheme === 'light')
+    if (savedTheme === 'light')
       return false;
 
     //first visit: follow the device/broswer prefernce
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  private startTraceSampling(): void{
+      this.traceTimer = window.setInterval(() =>{
+        const currentMid = this.mid();
+
+        if(currentMid === null)
+          return;
+
+        this.midTrace.update(price =>[
+          ...price.slice(-89),
+          currentMid
+        ]);
+      },1000);
   }
 }
