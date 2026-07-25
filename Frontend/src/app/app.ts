@@ -252,24 +252,37 @@ export class App implements OnInit, OnDestroy {
       quantity: this.quantity(),
     }).subscribe({
       next: ack => {
-        if (!ack.matched) {
-          const instrument = this.activeInstrument();
+        const instrument = this.activeInstrument();
+        const submittedSide = this.side();
+        const submittedQuantity = this.quantity();
 
-          if (instrument) {
-            this.workingOrders.update(orders => [
-              {
-                orderId: ack.orderId,
-                securityId: instrument.securityId,
-                symbol: instrument.symbol,
-                username: this.trader().trim(),
-                side: this.side(),
-                price: this.priceCents(),
-                quantity: this.quantity(),
-                filledQuantity: 0,
-              },
-              ...orders,
-            ]);
-          }
+        const immediatelyFilled = ack.fills
+          .filter(fill =>
+          submittedSide === 'buy'
+            ? fill.bidOrderId === ack.orderId
+            : fill.askOrderId === ack.orderId
+          ).reduce((total, fill) => total + fill.quantity, 0);
+
+        const remainingQuantity = Math.max(
+          0,
+          submittedQuantity - immediatelyFilled
+        );
+
+      -  // add the order when any quantity remains
+        // whether it's a full or partial fill
+        if(instrument && remainingQuantity > 0){
+          this.workingOrders.update(orders => [
+            {
+              orderId: ack.orderId,
+              securityId: instrument.securityId,
+              symbol: instrument.symbol,
+              username: this.trader().trim(),
+              side: submittedSide,
+              price: this.priceCents(),
+              quantity: submittedQuantity,
+              filledQuantity: immediatelyFilled
+            }, ...orders
+          ]);
         }
         this.isSubmitting.set(false);
       },
