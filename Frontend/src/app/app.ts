@@ -9,7 +9,7 @@ import {
 import {DatePipe} from '@angular/common';
 import {MarketDataService} from './MarketData.service';
 import {TradingApiService} from './TradingApi.service';
-import {BookMessage, MarketMessage, WorkingOrder} from './trading.models';
+import {BookMessage, MarketMessage, WorkingOrder, TradeMessage} from './trading.models';
 
 interface Instrument {
   securityId: number;
@@ -315,11 +315,47 @@ export class App implements OnInit, OnDestroy {
     );
   }
 
+  private applyTradeToWorkingOrders(trade: TradeMessage): void {
+    this.workingOrders.update(orders =>
+      orders.flatMap(order => {
+        // ids are global, but checking securityId prevents
+        // accidental updates after a server restart or ID reuse
+        if(order.securityId !== trade.securityId)
+          return [order];
+
+        const isFilledOrder =
+          (order.side == 'buy' && order.orderId === trade.bidOrderId) ||
+          (order.side == 'sell' && order.orderId === trade.askOrderId)
+
+        if(!isFilledOrder)
+          return [order];
+
+        const filledQuantity = Math.min(
+          order.quantity,
+          order.filledQuantity + trade.quantity
+        );
+
+        // a filled order is no longer resting
+        if(filledQuantity >= order.quantity)
+          return [];
+
+
+        return [{
+          ...order,
+          filledQuantity
+        }];
+      }))
+
+  }
+
   private handleMarketMessage(message: MarketMessage): void {
     if (message.type === 'book') {
       this.applyBook(message);
       return;
     }
+
+    // a trade message has arrived, update and working order involved in this execution
+    this.applyTradeToWorkingOrders(message);
 
     const side: TapeRow['side'] =
       this.bestAsk() !== null && message.price >= this.bestAsk()!
@@ -361,7 +397,7 @@ export class App implements OnInit, OnDestroy {
       }
     }
 
-    if(book.securityId === this.activeId()){
+    if (book.securityId === this.activeId()) {
       this.bids.set(book.bids);
       this.asks.set(book.asks);
     }
@@ -416,7 +452,7 @@ export class App implements OnInit, OnDestroy {
     this.traceTimer = window.setInterval(() => {
       const mids = this.latestMidsByInstrument();
 
-      for(const [securityId, mid] of Object.entries(mids))
+      for (const [securityId, mid] of Object.entries(mids))
         this.appendTraceSample(Number(securityId), mid);
     }, 1000);
   }

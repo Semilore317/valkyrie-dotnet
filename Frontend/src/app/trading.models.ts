@@ -18,6 +18,8 @@ export interface BookMessage{
 export interface TradeMessage{
   type: 'trade';
   securityId: number;
+  bidOrderId: number;
+  askOrderId: number;
   price: number;
   quantity: number;
   filledAt: string; // ISO timestamp from the API
