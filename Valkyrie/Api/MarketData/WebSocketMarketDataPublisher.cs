@@ -15,7 +15,13 @@ public sealed class WebSocketMarketDataPublisher(MarketDataHub Hub) : IMarketDat
     {
         Hub.BroadCast(trade.SecurityId, Serialize(new
         {
-            type = "trade", trade.SecurityId, trade.Price, trade.Quantity, trade.FilledAt
+            type = "trade", 
+            trade.SecurityId,
+            trade.BidOrderId,
+            trade.AskOrderId,
+            trade.Price, 
+            trade.Quantity, 
+            trade.FilledAt
         }));
     }
 
