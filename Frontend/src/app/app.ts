@@ -89,6 +89,8 @@ export class App implements OnInit, OnDestroy {
   readonly submitError = signal('');
   readonly isSubmitting = signal(false);
   readonly tracesByInstrument = signal<Record<number, number[]>>({});
+  readonly booksByInstrument = signal<Record<number, BookMessage>>({});
+  readonly latestMidsByInstrument = signal<Record<number, number>>({});
 
   readonly midTrace = computed(() => this.tracesByInstrument()[this.activeId()] ?? []);
 
@@ -167,7 +169,7 @@ export class App implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.applyTheme();
-    this.subscribeToInstrument(this.activeId());
+    this.connectToMarketData();
     this.startTraceSampling();
   }
 
@@ -191,10 +193,12 @@ export class App implements OnInit, OnDestroy {
     if (id === this.activeId()) return;
 
     this.activeId.set(id);
-    this.asks.set([]);
-    this.bids.set([]);
     this.traceHover.set(null);
-    this.subscribeToInstrument(id);
+
+    const cachedBook = this.booksByInstrument()[id];
+
+    this.bids.set(cachedBook?.bids ?? []);
+    this.bids.set(cachedBook?.asks ?? []);
   }
 
   onTraceMove(event: MouseEvent): void {
@@ -297,13 +301,17 @@ export class App implements OnInit, OnDestroy {
     }
   }
 
-  private subscribeToInstrument(securityId: number): void {
+  private connectToMarketData(): void {
     this.connectionStatus.set('CONNECTING');
 
+    const securityIds = this.instruments().map(
+      instrument => instrument.securityId,
+    );
+
     this.marketData.connect(
-      securityId,
-      (message: MarketMessage) => this.handleMarketMessage(message),
-      (status: string) => this.connectionStatus.set(status)
+      securityIds,
+      message => this.handleMarketMessage(message),
+      status => this.connectionStatus.set(status)
     );
   }
 
@@ -330,28 +338,32 @@ export class App implements OnInit, OnDestroy {
   }
 
   private applyBook(book: BookMessage): void {
-    //ignore and final message from a socket being closed after a tab switch
-    if (book.securityId !== this.activeId())
-      return;
+    this.booksByInstrument.update(books => ({
+      ...books,
+      [book.securityId]: book
+    }));
 
-    this.bids.set(book.bids);
-    this.asks.set(book.asks);
+    if (book.bid !== null && book.ask !== null) {
+      const mid = (book.bid + book.ask) / 2;
 
-    if (book.bid === null || book.ask === null) {
-      return;
+      this.latestMidsByInstrument.update(mids => ({
+        ...mids,
+        [book.securityId]: mid
+      }));
+
+      const trace = this.tracesByInstrument()[book.securityId];
+
+      if (!trace || trace.length === 0) {
+        this.tracesByInstrument.update(traces => ({
+          ...traces,
+          [book.securityId]: Array.from({length: 90}, () => mid),
+        }));
+      }
     }
 
-    const currentTrace = this.tracesByInstrument()[book.securityId];
-
-    if (!currentTrace || currentTrace.length === 0) {
-      const firstMid = (book.bid + book.ask) / 2;
-
-      this.tracesByInstrument.update(trace => ({
-        ...trace,
-        [book.securityId]: Array.from({
-          length: 90
-        }, () => firstMid)
-      }))
+    if(book.securityId === this.activeId()){
+      this.bids.set(book.bids);
+      this.asks.set(book.asks);
     }
   }
 
@@ -402,13 +414,10 @@ export class App implements OnInit, OnDestroy {
 
   private startTraceSampling(): void {
     this.traceTimer = window.setInterval(() => {
-      const securityId = this.activeId();
-      const currentMid = this.mid();
+      const mids = this.latestMidsByInstrument();
 
-      if (currentMid === null)
-        return;
-
-      this.appendTraceSample(securityId, currentMid);
+      for(const [securityId, mid] of Object.entries(mids))
+        this.appendTraceSample(Number(securityId), mid);
     }, 1000);
   }
 }

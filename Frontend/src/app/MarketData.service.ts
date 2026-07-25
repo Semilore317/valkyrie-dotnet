@@ -1,12 +1,12 @@
-﻿import { Injectable } from '@angular/core';
-import { MarketMessage } from './trading.models';
+﻿import {Injectable} from '@angular/core';
+import {MarketMessage} from './trading.models';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({providedIn: 'root'})
 export class MarketDataService {
   private socket?: WebSocket;
 
   connect(
-    securityId: number,
+    securityIds: number[],
     onMessage: (message: MarketMessage) => void,
     onStatus: (status: string) => void,
   ): void {
@@ -20,10 +20,12 @@ export class MarketDataService {
     this.socket.onopen = () => {
       onStatus('LIVE');
 
-      this.socket?.send(JSON.stringify({
-        action: 'subscribe',
-        securityId,
-      }));
+      for (const securityId of securityIds) {
+        this.socket?.send(JSON.stringify({
+          action: 'subscribe',
+          securityId,
+        }));
+      }
     };
 
     this.socket.onmessage = (event: MessageEvent<string>) => {
