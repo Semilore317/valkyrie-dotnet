@@ -57,7 +57,6 @@ export class App implements OnInit, OnDestroy {
   private readonly api = inject(TradingApiService);
 
   readonly tape = signal<TapeRow[]>([]);
-  readonly midTrace = signal<number[]>([]);
   readonly traceHover = signal<TracePoint | null>(null);
   private traceTimer?: number;
   readonly workingOrders = signal<WorkingOrder[]>([]);
@@ -89,6 +88,9 @@ export class App implements OnInit, OnDestroy {
   readonly quantityInput = signal('500');
   readonly submitError = signal('');
   readonly isSubmitting = signal(false);
+  readonly tracesByInstrument = signal<Record<number, number[]>>({});
+
+  readonly midTrace = computed(() => this.tracesByInstrument()[this.activeId()] ?? []);
 
   readonly activeInstrument = computed(() =>
     this.instruments().find(i => i.securityId === this.activeId()) ?? null
@@ -148,7 +150,7 @@ export class App implements OnInit, OnDestroy {
       const y = height - verticalPadding -
         ((price - minimum) / range) * (height - verticalPadding * 2);
 
-      return { price, x, y };
+      return {price, x, y};
     });
   });
 
@@ -172,7 +174,7 @@ export class App implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.marketData.disconnect();
 
-    if(this.traceTimer !==  undefined)
+    if (this.traceTimer !== undefined)
       window.clearInterval(this.traceTimer);
   }
 
@@ -191,7 +193,6 @@ export class App implements OnInit, OnDestroy {
     this.activeId.set(id);
     this.asks.set([]);
     this.bids.set([]);
-    this.midTrace.set([]);
     this.traceHover.set(null);
     this.subscribeToInstrument(id);
   }
@@ -329,13 +330,28 @@ export class App implements OnInit, OnDestroy {
   }
 
   private applyBook(book: BookMessage): void {
+    //ignore and final message from a socket being closed after a tab switch
+    if (book.securityId !== this.activeId())
+      return;
+
     this.bids.set(book.bids);
     this.asks.set(book.asks);
 
-    if (book.bid !== null && book.ask !== null && this.midTrace().length === 0) {
-      const newMid = (book.bid + book.ask) / 2;
+    if (book.bid === null || book.ask === null) {
+      return;
+    }
 
-      this.midTrace.set(Array.from({length: 90},() => newMid));
+    const currentTrace = this.tracesByInstrument()[book.securityId];
+
+    if (!currentTrace || currentTrace.length === 0) {
+      const firstMid = (book.bid + book.ask) / 2;
+
+      this.tracesByInstrument.update(trace => ({
+        ...trace,
+        [book.securityId]: Array.from({
+          length: 90
+        }, () => firstMid)
+      }))
     }
   }
 
@@ -371,17 +387,28 @@ export class App implements OnInit, OnDestroy {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
-  private startTraceSampling(): void{
-      this.traceTimer = window.setInterval(() =>{
-        const currentMid = this.mid();
+  private appendTraceSample(
+    securityId: number,
+    price: number,
+  ) {
+    this.tracesByInstrument.update(traces => ({
+      ...traces,
+      [securityId]: [
+        ...(traces[securityId] ?? []).slice(-89),
+        price
+      ]
+    }));
+  }
 
-        if(currentMid === null)
-          return;
+  private startTraceSampling(): void {
+    this.traceTimer = window.setInterval(() => {
+      const securityId = this.activeId();
+      const currentMid = this.mid();
 
-        this.midTrace.update(price =>[
-          ...price.slice(-89),
-          currentMid
-        ]);
-      },1000);
+      if (currentMid === null)
+        return;
+
+      this.appendTraceSample(securityId, currentMid);
+    }, 1000);
   }
 }
