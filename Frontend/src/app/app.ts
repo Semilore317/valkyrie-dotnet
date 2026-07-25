@@ -268,7 +268,7 @@ export class App implements OnInit, OnDestroy {
           submittedQuantity - immediatelyFilled
         );
 
-      -  // add the order when any quantity remains
+        // add the order when any quantity remains
         // whether it's a full or partial fill
         if(instrument && remainingQuantity > 0){
           this.workingOrders.update(orders => [

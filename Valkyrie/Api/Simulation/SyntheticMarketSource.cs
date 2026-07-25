@@ -49,8 +49,8 @@ public class SyntheticMarketSource(
                 price,
                 quantity
             ));
-
-        if (!ack.Matched) // only track what actually rested
+        
+        if(HasRestingRemainder(ack, side, quantity))
             resting.Add((ack.OrderId, side));
     }
 
@@ -219,11 +219,33 @@ public class SyntheticMarketSource(
                 quantity
             ));
 
-            if (!bid.Matched)
+            if (HasRestingRemainder(bid, Side.Buy, quantity))
                 resting.Add((bid.OrderId, Side.Buy));
 
-            if (!ask.Matched)
+            if (HasRestingRemainder(ask, Side.Sell,  quantity))
                 resting.Add((ask.OrderId, Side.Sell));
         }
+    }
+
+    private static uint FilledQuantityFor(
+        OrderAck ack,
+        Side side
+    )
+    {
+        return (uint)ack.Fills
+            .Where(
+                fill => side == Side.Buy
+                ? fill.BidOrderId == ack.OrderId
+                : fill.AskOrderId == ack.OrderId)
+            .Sum(fill => (long)fill.Quantity);
+    }
+
+    private static bool HasRestingRemainder(
+        OrderAck ack,
+        Side side,
+        uint SubmittedQuantity
+    )
+    {
+        return FilledQuantityFor(ack, side) < SubmittedQuantity;
     }
 }
