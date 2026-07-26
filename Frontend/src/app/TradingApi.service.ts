@@ -24,14 +24,14 @@ export class TradingApiService {
     sessionId: string,
     securityId?: number
   ): Observable<Execution[]> {
-    const params = securityId === undefined
-      ? {}
-      : {securityId};
+    const url = `/sessions/${sessionId}/executions`;
 
-    return this.http.get<Execution[]>(
-      `/sessions/${sessionId}/executions`,
-      {params}
-    );
+    if (securityId === undefined)
+      return this.http.get<Execution[]>(url);
+
+    return this.http.get<Execution[]>(url, {
+      params: {securityId}
+    });
   }
 
   placeOrder(

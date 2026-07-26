@@ -340,6 +340,130 @@
           }
         </div>
       </section>
+
+      <section class="panel executions-panel">
+        <div class="phead">
+          <h2>Session Executions</h2>
+
+          <div class="execution-heading-actions">
+            <span class="meta">
+              {{ activeExecutions().length }} fills
+            </span>
+
+            <button
+              type="button"
+              class="refresh-executions"
+              (click)="loadExecutions()"
+              [disabled]="executionsLoading()"
+            >
+              {{ executionsLoading() ? 'Loading' : 'Refresh' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="execution-summary">
+          <div>
+            <span class="label">Bought</span>
+            <strong class="num buy-value">
+              {{ sessionBoughtQuantity().toLocaleString() }}
+            </strong>
+          </div>
+
+          <div>
+            <span class="label">Sold</span>
+            <strong class="num sell-value">
+              {{ sessionSoldQuantity().toLocaleString() }}
+            </strong>
+          </div>
+
+          <div>
+            <span class="label">Net</span>
+            <strong class="num">
+              {{ sessionNetQuantity().toLocaleString() }}
+            </strong>
+          </div>
+
+          <div>
+            <span class="label">Maker</span>
+            <strong class="num">
+              {{ makerPercentage().toFixed(1) }}%
+            </strong>
+          </div>
+
+          <div>
+            <span class="label">Buy VWAP</span>
+            <strong class="num">
+              @if (buyVWAP() !== null) {
+                {{ (buyVWAP()! / 100).toFixed(2) }}
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+
+          <div>
+            <span class="label">Sell VWAP</span>
+            <strong class="num">
+              @if (sellVWAP() !== null) {
+                {{ (sellVWAP()! / 100).toFixed(2) }}
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+        </div>
+
+        @if (executionError()) {
+          <p class="form-error">{{ executionError() }}</p>
+        }
+
+        <div class="execution-head">
+          <span>Time</span>
+          <span>Side</span>
+          <span>Price</span>
+          <span>Size</span>
+          <span>Role</span>
+          <span>Order</span>
+        </div>
+
+        <div class="execution-list">
+          @for (execution of activeExecutions(); track execution.executionId) {
+            <div
+              class="execution-row"
+              [class.buy]="execution.side === 'Buy'"
+              [class.sell]="execution.side === 'Sell'"
+            >
+              <span class="num">
+                {{ execution.executedAt | date: 'HH:mm:ss.SSS' }}
+              </span>
+
+              <span class="execution-side">
+                {{ execution.side }}
+              </span>
+
+              <span class="num execution-price">
+                {{ (execution.price / 100).toFixed(2) }}
+              </span>
+
+              <span class="num">
+                {{ execution.quantity.toLocaleString() }}
+              </span>
+
+              <span class="execution-role">
+                {{ execution.liquidityRole }}
+              </span>
+
+              <span class="num">
+                #{{ execution.orderId }}
+              </span>
+            </div>
+          } @empty {
+            <p class="empty">
+              No executions for this instrument yet...
+            </p>
+          }
+        </div>
+      </section>
     </div>
     <!--Orders Panel -->
     <section class="panel tape-panel">

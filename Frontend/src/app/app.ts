@@ -109,15 +109,23 @@ export class App implements OnInit, OnDestroy {
     this.instruments().find(execution => execution.securityId === this.activeId())
   );
 
+  readonly activeExecutions = computed(() =>
+    this.executions().filter(
+      execution => execution.securityId === this.activeId()
+    )
+  );
+
   readonly sessionBoughtQuantity = computed(() =>
     this.executions()
       .filter(execution => execution.side === 'Buy')
-      .reduce((total, execution) => total + execution.quantity), 0);
+      .reduce((total, execution) => total + execution.quantity, 0)
+  );
 
   readonly sessionSoldQuantity = computed(() =>
     this.executions()
       .filter(execution => execution.side === 'Sell')
-      .reduce((total, execution) => total + execution.quantity), 0);
+      .reduce((total, execution) => total + execution.quantity, 0)
+  );
 
   readonly sessionNetQuantity = computed(() =>
     this.sessionBoughtQuantity() - this.sessionSoldQuantity()
@@ -139,7 +147,7 @@ export class App implements OnInit, OnDestroy {
     if (executions.length === 0)
       return 0;
 
-    const makerExecutions = this.executions.filter(
+    const makerExecutions = executions.filter(
       execution => execution.liquidityRole === 'Maker'
     ).length;
 
@@ -585,7 +593,7 @@ export class App implements OnInit, OnDestroy {
     // sessionStorage preserves the session through a browser refresh
     // but opening a separate tab creates a logically  separate session
 
-    const savedSessionId = localStorage.getItem('sessionId');
+    const savedSessionId = sessionStorage.getItem('sessionId');
 
     if (savedSessionId) {
       this.sessionId.set(savedSessionId);
@@ -595,7 +603,7 @@ export class App implements OnInit, OnDestroy {
 
     this.api.createSession().subscribe({
       next: session => {
-        sessionStorage.setItem('sessionId', session.id);
+        sessionStorage.setItem('sessionId', session.sessionId);
 
         this.sessionId.set(session.sessionId);
         this.loadExecutions();
