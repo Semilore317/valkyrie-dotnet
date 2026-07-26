@@ -9,7 +9,13 @@ import {
 import {DatePipe} from '@angular/common';
 import {MarketDataService} from './MarketData.service';
 import {TradingApiService} from './TradingApi.service';
-import {BookMessage, MarketMessage, WorkingOrder, TradeMessage} from './trading.models';
+import {
+  BookMessage,
+  Execution,
+  MarketMessage,
+  WorkingOrder,
+  TradeMessage
+} from './trading.models';
 
 interface Instrument {
   securityId: number;
@@ -59,10 +65,15 @@ export class App implements OnInit, OnDestroy {
   readonly tape = signal<TapeRow[]>([]);
   readonly traceHover = signal<TracePoint | null>(null);
   private traceTimer?: number;
-  readonly workingOrders = signal<WorkingOrder[]>([]);
   readonly connectionStatus = signal('CONNECTING');
   readonly dark = signal(this.getInitialTheme());
   readonly activeId = signal(1);
+
+  readonly workingOrders = signal<WorkingOrder[]>([]);
+  readonly sessionId = signal<string | null>(null);
+  readonly executions = signal<Execution[]>([]);
+  readonly executionsLoading = signal(false);
+  readonly executionError = signal('');
 
   readonly instruments = signal<Instrument[]>([
     {securityId: 1, symbol: 'MSFT', name: 'Microsoft Corp', last: 418.05, changePercent: 1.5},
@@ -95,8 +106,45 @@ export class App implements OnInit, OnDestroy {
   readonly midTrace = computed(() => this.tracesByInstrument()[this.activeId()] ?? []);
 
   readonly activeInstrument = computed(() =>
-    this.instruments().find(i => i.securityId === this.activeId()) ?? null
+    this.instruments().find(execution => execution.securityId === this.activeId())
   );
+
+  readonly sessionBoughtQuantity = computed(() =>
+    this.executions()
+      .filter(execution => execution.side === 'Buy')
+      .reduce((total, execution) => total + execution.quantity), 0);
+
+  readonly sessionSoldQuantity = computed(() =>
+    this.executions()
+      .filter(execution => execution.side === 'Sell')
+      .reduce((total, execution) => total + execution.quantity), 0);
+
+  readonly sessionNetQuantity = computed(() =>
+    this.sessionBoughtQuantity() - this.sessionSoldQuantity()
+  );
+
+  readonly buyVWAP = computed(() =>
+    this.calculateVWAP(this.executions().filter(
+      execution => execution.side === 'Buy'
+    )));
+
+  readonly sellVWAP = computed(() =>
+    this.calculateVWAP(this.executions().filter(
+      execution => execution.side === 'Sell'
+    )));
+
+  readonly makerPercentage = computed(() => {
+    const executions = this.executions();
+
+    if (executions.length === 0)
+      return 0;
+
+    const makerExecutions = this.executions.filter(
+      execution => execution.liquidityRole === 'Maker'
+    ).length;
+
+    return makerExecutions / executions.length * 100;
+  });
 
   readonly bestAsk = computed(() => this.asks()[0]?.price ?? null);
   readonly bestBid = computed(() => this.bids()[0]?.price ?? null);
@@ -171,6 +219,7 @@ export class App implements OnInit, OnDestroy {
     this.applyTheme();
     this.connectToMarketData();
     this.startTraceSampling();
+    this.initializeTradingSession();
   }
 
   ngOnDestroy(): void {
@@ -244,7 +293,14 @@ export class App implements OnInit, OnDestroy {
 
     this.isSubmitting.set(true);
 
+    const sessionId = this.sessionId();
+    if (!sessionId) {
+      this.submitError.set("Trading session is still initializing");
+      return;
+    }
+
     this.api.placeOrder({
+      sessionId,
       securityId: this.activeId(),
       username: this.trader().trim(),
       side: this.side() === 'buy' ? 'Buy' : 'Sell',
@@ -258,9 +314,9 @@ export class App implements OnInit, OnDestroy {
 
         const immediatelyFilled = ack.fills
           .filter(fill =>
-          submittedSide === 'buy'
-            ? fill.bidOrderId === ack.orderId
-            : fill.askOrderId === ack.orderId
+            submittedSide === 'buy'
+              ? fill.bidOrderId === ack.orderId
+              : fill.askOrderId === ack.orderId
           ).reduce((total, fill) => total + fill.quantity, 0);
 
         const remainingQuantity = Math.max(
@@ -270,7 +326,7 @@ export class App implements OnInit, OnDestroy {
 
         // add the order when any quantity remains
         // whether it's a full or partial fill
-        if(instrument && remainingQuantity > 0){
+        if (instrument && remainingQuantity > 0) {
           this.workingOrders.update(orders => [
             {
               orderId: ack.orderId,
@@ -285,6 +341,7 @@ export class App implements OnInit, OnDestroy {
           ]);
         }
         this.isSubmitting.set(false);
+        this.loadExecutions();
       },
       error: () => {
         this.submitError.set('Order not accepted.');
@@ -329,18 +386,25 @@ export class App implements OnInit, OnDestroy {
   }
 
   private applyTradeToWorkingOrders(trade: TradeMessage): void {
+    const concernsWorkingOrder = this.workingOrders().some(
+      order => order.securityId === trade.securityId
+        && (
+          (order.side === 'buy' && order.orderId === trade.bidOrderId) ||
+          (order.side === 'sell' && order.orderId === trade.askOrderId)
+        ));
+
     this.workingOrders.update(orders =>
       orders.flatMap(order => {
         // ids are global, but checking securityId prevents
         // accidental updates after a server restart or ID reuse
-        if(order.securityId !== trade.securityId)
+        if (order.securityId !== trade.securityId)
           return [order];
 
         const isFilledOrder =
           (order.side == 'buy' && order.orderId === trade.bidOrderId) ||
           (order.side == 'sell' && order.orderId === trade.askOrderId)
 
-        if(!isFilledOrder)
+        if (!isFilledOrder)
           return [order];
 
         const filledQuantity = Math.min(
@@ -349,16 +413,16 @@ export class App implements OnInit, OnDestroy {
         );
 
         // a filled order is no longer resting
-        if(filledQuantity >= order.quantity)
+        if (filledQuantity >= order.quantity)
           return [];
-
 
         return [{
           ...order,
           filledQuantity
         }];
       }))
-
+    if (concernsWorkingOrder)
+      this.loadExecutions();
   }
 
   private handleMarketMessage(message: MarketMessage): void {
@@ -468,5 +532,78 @@ export class App implements OnInit, OnDestroy {
       for (const [securityId, mid] of Object.entries(mids))
         this.appendTraceSample(Number(securityId), mid);
     }, 1000);
+  }
+
+  loadExecutions(): void {
+    const sessionId = this.sessionId();
+
+    if (!sessionId)
+      return;
+
+    this.executionsLoading.set(true);
+    this.executionError.set('');
+
+    this.api.getExecutions(sessionId).subscribe({
+      next: executions => {
+        // sort newest first, even if the server ordering changes later
+        this.executions.set(
+          [...executions].sort(
+            (a, b) => new Date(b.executedAt).getTime() - new Date(a.executedAt).getTime()
+          )
+        );
+
+        this.executionsLoading.set(false);
+      },
+      error: () => {
+        this.executionError.set(
+          'Execution history could not be loaded.'
+        );
+
+        this.executionsLoading.set(false);
+      }
+    });
+  }
+
+  private calculateVWAP(
+    executions: Execution[]
+  ): number | null {
+    const quantity = executions.reduce(
+      (total, execution) => total + execution.quantity, 0
+    );
+
+    if (quantity === 0)
+      return null;
+
+    const priceQuantity = executions.reduce(
+      (total, execution) => total + execution.price * execution.quantity, 0
+    );
+
+    return priceQuantity / quantity;
+  }
+
+  private initializeTradingSession(): void {
+    // sessionStorage preserves the session through a browser refresh
+    // but opening a separate tab creates a logically  separate session
+
+    const savedSessionId = localStorage.getItem('sessionId');
+
+    if (savedSessionId) {
+      this.sessionId.set(savedSessionId);
+      this.loadExecutions();
+      return;
+    }
+
+    this.api.createSession().subscribe({
+      next: session => {
+        sessionStorage.setItem('sessionId', session.id);
+
+        this.sessionId.set(session.sessionId);
+        this.loadExecutions();
+      },
+
+      error: () => {
+        this.executionError.set('Trading session could not be created.');
+      }
+    });
   }
 }
