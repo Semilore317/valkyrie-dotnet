@@ -25,9 +25,16 @@ export interface TradeMessage{
   filledAt: string; // ISO timestamp from the API
 }
 
+export interface TradingSession{
+  sessionId: string; // since they're Guids not just digits
+  createdAt: string;
+}
+
 export type MarketMessage = BookMessage | TradeMessage;
+export type LiquidityRole = 'Maker' | 'Taker';
 
 export interface PlaceOrderRequest{
+  sessionId: string;
   securityId: number;
   username: string;
   side: 'Buy' | 'Sell';
@@ -46,7 +53,6 @@ export interface OrderAck{
   }>;
 }
 
-
 export interface WorkingOrder{
   orderId: number;
   securityId: number;
@@ -56,4 +62,17 @@ export interface WorkingOrder{
   price: number;
   quantity: number;
   filledQuantity: number;
+}
+
+export interface Execution{
+  executionId: number;
+  matchId: string,
+  sessionId: string;
+  securityId: number;
+  orderId: number;
+  side: 'Buy' | 'Sell';
+  price: number;
+  quantity: number;
+  executedAt: string;
+  liquidityRole: LiquidityRole;
 }
