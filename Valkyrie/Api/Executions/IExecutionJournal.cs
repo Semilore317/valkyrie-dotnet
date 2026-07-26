@@ -37,7 +37,7 @@ public interface IExecutionJournal
     // stop tracking an order after cancellation
     void RemoveOrder(long orderId);
 
-    IReadOnlyList<ExecutionRecord> GetExecution(
+    IReadOnlyList<ExecutionRecord> GetExecutions(
         Guid sessionId,
         long? securityId = null
     );

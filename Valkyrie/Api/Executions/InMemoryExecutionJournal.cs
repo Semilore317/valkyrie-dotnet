@@ -75,7 +75,7 @@ public class InMemoryExecutionJournal : IExecutionJournal
             _orders.Remove(orderId);    
     }
 
-    public IReadOnlyList<ExecutionRecord> GetExecution(Guid sessionId, long? securityId = null)
+    public IReadOnlyList<ExecutionRecord> GetExecutions(Guid sessionId, long? securityId = null)
     {
         lock (_gate)
         {

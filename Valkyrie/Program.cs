@@ -70,9 +70,10 @@ builder.Services.AddHostedService<Valkyrie.Api.Simulation.MarketSimulator>();
 var app = builder.Build();
 InitializeOrderBooks(app);
 
-// pipeling & endpoints
+// endpoints
 app.UseWebSockets(); // turns on the 101 middleware
 app.MapOrderEndpoints();
+app.MapExecutionEndpoints();
 app.MapMarketDataEndpoints(); // registers /ws/marketdata
 
 await app.RunAsync();
