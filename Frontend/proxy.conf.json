@@ -11,6 +11,10 @@
     "target": "http://localhost:5000",
     "secure": false
   },
+  "/sessions": {
+    "target": "http://localhost:5000",
+    "secure": false
+  },
   "/ws": {
     "target": "ws://localhost:5000",
     "secure": false,

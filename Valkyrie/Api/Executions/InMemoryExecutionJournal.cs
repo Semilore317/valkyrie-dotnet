@@ -96,28 +96,27 @@ public class InMemoryExecutionJournal : IExecutionJournal
     )
     {
         // simulator and untracked orders are intentionally ignored
-        if (_orders.TryGetValue(orderId, out var tracked))
+        if (!_orders.TryGetValue(orderId, out var tracked))
             return;
 
         var role = orderId == incomingOrderId
             ? LiquidityRole.Taker
             : LiquidityRole.Maker;
 
-        if (tracked != null)
-            _executions.Add(new ExecutionRecord(
-                ExecutionId: Guid.NewGuid(),
-                MatchId: matchId,
-                SessionId: tracked.SessionId,
-                SecurityId: tracked.SecurityId,
-                OrderId: orderId,
-                Side: side,
-                Price: fill.ExecutionPrice,
-                Quantity: fill.FilledQuantity,
-                ExecutedAt: fill.FilledAt,
-                LiquidityRole: role
-            ));
+        _executions.Add(new ExecutionRecord(
+            ExecutionId: Guid.NewGuid(),
+            MatchId: matchId,
+            SessionId: tracked.SessionId,
+            SecurityId: tracked.SecurityId,
+            OrderId: orderId,
+            Side: side,
+            Price: fill.ExecutionPrice,
+            Quantity: fill.FilledQuantity,
+            ExecutedAt: fill.FilledAt,
+            LiquidityRole: role
+        ));
 
-        tracked!.RemainingQuantity = fill.FilledQuantity >= tracked.RemainingQuantity
+        tracked.RemainingQuantity = fill.FilledQuantity >= tracked.RemainingQuantity
             ? 0
             : tracked.RemainingQuantity - fill.FilledQuantity;
 

@@ -68,12 +68,13 @@ public sealed class OrderGateway(
                     initialQuantity: request.Quantity
                 )
             );
+
+            // Keep journal state and the published snapshot consistent with
+            // the matching-engine mutation performed under this gateway lock.
+            executionJournal.RecordFills(result.Fills, id);
+
+            engine.TryGetSnapshot(request.SecurityId, out snapshot);
         }
-
-        // convert fills into session-specific execution records
-        executionJournal.RecordFills(result.Fills, id);
-
-        engine.TryGetSnapshot(request.SecurityId, out snapshot);
 
         Broadcast(result, snapshot);
         return OrderAck.From(id, result);

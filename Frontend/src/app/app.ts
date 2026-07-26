@@ -304,6 +304,7 @@ export class App implements OnInit, OnDestroy {
     const sessionId = this.sessionId();
     if (!sessionId) {
       this.submitError.set("Trading session is still initializing");
+      this.isSubmitting.set(false);
       return;
     }
 
@@ -504,9 +505,8 @@ export class App implements OnInit, OnDestroy {
   }
 
   private getInitialTheme(): boolean {
-    if (typeof window === 'undefined') {
+    if (typeof localStorage === 'undefined')
       return false;
-    }
 
     const savedTheme = localStorage.getItem('theme');
 
@@ -514,6 +514,9 @@ export class App implements OnInit, OnDestroy {
       return true;
 
     if (savedTheme === 'light')
+      return false;
+
+    if(typeof window === 'undefined' || typeof window.matchMedia !== 'function')
       return false;
 
     //first visit: follow the device/broswer prefernce
