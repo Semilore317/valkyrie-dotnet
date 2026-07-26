@@ -340,10 +340,44 @@
           }
         </div>
       </section>
+    </div>
 
-      <section class="panel executions-panel">
+    <!-- Trade Tape -->
+    <section class="panel tape-panel">
+      <div class="phead">
+        <h2>Trade Tape</h2>
+        <span class="meta">recent fills</span>
+      </div>
+
+      <div class="tape-head">
+        <span>Time</span>
+        <span>Price</span>
+        <span>Size</span>
+        <span>Side</span>
+      </div>
+
+      <div class="tape">
+        @for (trade of tape(); track trade.id) {
+          <div
+            class="taperow fresh"
+            [class.buy]="trade.side === 'buy'"
+            [class.sell]="trade.side === 'sell'"
+          >
+            <span class="tm num">{{ trade.filledAt | date: 'HH:mm:ss.SSS' }}</span>
+            <span class="tp num">{{ (trade.price / 100).toFixed(2) }}</span>
+            <span class="ts num">{{ trade.quantity.toLocaleString() }}</span>
+            <span class="td">{{ trade.side }}</span>
+          </div>
+        } @empty {
+          <p class="empty">Waiting for trades...</p>
+        }
+      </div>
+    </section>
+
+    <!-- Session Trades -->
+    <section class="panel executions-panel">
         <div class="phead">
-          <h2>Session Executions</h2>
+          <h2>Session Trades</h2>
 
           <div class="execution-heading-actions">
             <span class="meta">
@@ -459,42 +493,10 @@
             </div>
           } @empty {
             <p class="empty">
-              No executions for this instrument yet...
+              No session trades for this instrument yet...
             </p>
           }
         </div>
-      </section>
-    </div>
-    <!--Orders Panel -->
-    <section class="panel tape-panel">
-      <div class="phead">
-        <h2>Trade Tape</h2>
-        <span class="meta">recent fills</span>
-      </div>
-
-      <div class="tape-head">
-        <span>Time</span>
-        <span>Price</span>
-        <span>Size</span>
-        <span>Side</span>
-      </div>
-
-      <div class="tape">
-        @for (trade of tape(); track trade.id) {
-          <div
-            class="taperow fresh"
-            [class.buy]="trade.side === 'buy'"
-            [class.sell]="trade.side === 'sell'"
-          >
-            <span class="tm num">{{ trade.filledAt | date: 'HH:mm:ss.SSS' }}</span>
-            <span class="tp num">{{ (trade.price / 100).toFixed(2) }}</span>
-            <span class="ts num">{{ trade.quantity.toLocaleString() }}</span>
-            <span class="td">{{ trade.side }}</span>
-          </div>
-        } @empty {
-          <p class="empty">Waiting for trades...</p>
-        }
-      </div>
     </section>
   </div>
 </div>

@@ -27,7 +27,7 @@
 
 .execution-summary{
   display: grid;
-  grid-template-columns: repeat(6, fr);
+  grid-template-columns: repeat(6, 1fr);
   border-bottom: 1px solid var(--line);
 }
 
@@ -52,6 +52,19 @@
 
 .execution-summary strong{
   font-size: 13px;
+}
+
+.executions-panel{
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+}
+
+.executions-panel .phead{
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-2);
 }
 
 .buy-value{
@@ -80,7 +93,7 @@
 }
 
 .execution-list{
-  max-height: 260px;
+  max-height: 240px;
   overflow-y: auto;
 }
 
@@ -125,7 +138,7 @@
   }
 
   .execution-head span:nth-child(5),
-  .execution-head span:nth-child(6)
+  .execution-head span:nth-child(6),
   .execution-row span:nth-child(5),
   .execution-row span:nth-child(6){
     display: none;
