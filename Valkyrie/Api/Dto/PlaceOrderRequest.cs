@@ -7,5 +7,6 @@ public record PlaceOrderRequest(
     string Username,
     Side Side,
     long Price,
-    uint Quantity
+    uint Quantity,
+    Guid? SessionId = null
 );
