@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "Valkyrie": {
+      "commandName": "Project",
+      "dotnetRunMessages": true
+    },
+    "simulated-market": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "MarketSimulatorConfiguration__Enabled": "true"
+      }
+    }
+  }
+}

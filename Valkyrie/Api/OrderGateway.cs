@@ -1,4 +1,5 @@
 using Valkyrie.Api.Dto;
+using Valkyrie.Api.Executions;
 using Valkyrie.Api.MarketData;
 using Valkyrie.MatchingEngine;
 using Valkyrie.Orders;
@@ -9,40 +10,72 @@ namespace Valkyrie.Api;
 ///  provides a thread-safe entry point for order operations routing to the matching engine
 ///  It uses a private lock object pattern to guarantee a mutex across all state mutations and reads
 /// </summary>
-
-public sealed class OrderGateway(IMatchingEngine engine, IMarketDataPublisher publisher)
+public sealed class OrderGateway(
+    IMatchingEngine engine,
+    IMarketDataPublisher publisher,
+    IExecutionJournal executionJournal
+)
 {
     private readonly object _gate = new();
     private long _nextOrderId;
 
-    private void Broadcast(MatchResult result, OrderBookSnapshot? snapshot)
+    private void Broadcast(
+        MatchResult result,
+        OrderBookSnapshot? snapshot
+    )
     {
         foreach (var fill in result.Fills)
             publisher.PublishTrade(TradeEvent.From(fill));
-        
-        if(snapshot != null)
+
+        if (snapshot != null)
             publisher.PublishBook(snapshot);
     }
-    
+
     public OrderAck Submit(PlaceOrderRequest request)
     {
-
         MatchResult result;
         long id;
         OrderBookSnapshot? snapshot;
-        
+
         // syncs access to the sequential ID generation and the underlying non-thread-safe matching engine instance
         // this prevents lock contention from external code
-        lock (_gate)                          
+        lock (_gate)
         {
             // server assigns the id for now.... since it's locked it's not a major concern for now
-            id = ++_nextOrderId;          
+            id = ++_nextOrderId;
+
+
+            // only user/browser orders carry a session
+            // simulator orders remain outside the trader execution journal
+            if (request.SessionId is { } sessionId)
+            {
+                executionJournal.RegisterOrder(
+                    sessionId: sessionId,
+                    orderId: id,
+                    securityId: request.SecurityId,
+                    side: request.Side,
+                    quantity: request.Quantity
+                );
+            }
+
             result = engine.AddOrder(
                 new Order(
-                    id, request.SecurityId, request.Username, request.Side, request.Price, request.Quantity));
+                    orderId: id,
+                    securityId: request.SecurityId,
+                    username: request.Username,
+                    side: request.Side,
+                    price: request.Price,
+                    initialQuantity: request.Quantity
+                )
+            );
+
+            // Keep journal state and the published snapshot consistent with
+            // the matching-engine mutation performed under this gateway lock.
+            executionJournal.RecordFills(result.Fills, id);
+
             engine.TryGetSnapshot(request.SecurityId, out snapshot);
         }
-        
+
         Broadcast(result, snapshot);
         return OrderAck.From(id, result);
     }
@@ -53,10 +86,13 @@ public sealed class OrderGateway(IMatchingEngine engine, IMarketDataPublisher pu
         lock (_gate)
         {
             engine.RemoveOrder(new CancelOrder(id, securityId, username));
+
+            executionJournal.RemoveOrder(id);
+
             engine.TryGetSnapshot(securityId, out snapshot);
         }
-        
-        if(snapshot != null)
+
+        if (snapshot != null)
             publisher.PublishBook(snapshot);
     }
 
@@ -67,7 +103,7 @@ public sealed class OrderGateway(IMatchingEngine engine, IMarketDataPublisher pu
             return engine.TryGetSnapshot(securityId, out book);
         }
     }
-    
+
     public OrderAck Modify(long id, long securityId, ModifyOrderRequest request)
     {
         MatchResult result;
@@ -75,12 +111,25 @@ public sealed class OrderGateway(IMatchingEngine engine, IMarketDataPublisher pu
 
         lock (_gate)
         {
+            executionJournal.ModifyOrder(
+                orderId: id,
+                side: request.Side,
+                quantity: request.Quantity
+            );
+
             var modifyOrder = new ModifyOrder(
-                id, securityId, request.Username, request.Side,  request.Price, request.Quantity);
+                id,
+                securityId,
+                request.Username,
+                request.Side,
+                request.Price,
+                request.Quantity
+            );
             result = engine.ChangeOrders(modifyOrder);
+            executionJournal.RecordFills(result.Fills, id);
             engine.TryGetSnapshot(securityId, out snapshot);
         }
-       
+
         Broadcast(result, snapshot);
         return OrderAck.From(id, result);
     }

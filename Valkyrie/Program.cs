@@ -2,6 +2,7 @@
 using Instruments;
 using Microsoft.Extensions.Options;
 using Valkyrie.Api;
+using Valkyrie.Api.Executions;
 using Valkyrie.Api.MarketData;
 using Valkyrie.Api.Simulation;
 using Valkyrie.Core.Configuration;
@@ -52,6 +53,7 @@ builder.Services.AddSingleton<IMatchingAlgorithm>(sp =>
 
 builder.Services.AddSingleton<IMatchingEngine, MatchingEngine>();
 builder.Services.AddSingleton<OrderGateway>();
+builder.Services.AddSingleton<IExecutionJournal, InMemoryExecutionJournal>();
 
 // market data & transport
 builder.Services.AddSingleton<MarketDataHub>();
@@ -59,6 +61,7 @@ builder.Services.AddSingleton<IMarketDataPublisher, WebSocketMarketDataPublisher
 builder.Services.ConfigureHttpJsonOptions(
     o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddSingleton<IMarketDataSource, SyntheticMarketSource>();
+
 // hosted services
 builder.Services.AddHostedService<Valkyrie.Core.Valkyrie>(); // the background service... it still runs
 builder.Services.AddHostedService<Valkyrie.Api.Simulation.MarketSimulator>();
@@ -67,9 +70,10 @@ builder.Services.AddHostedService<Valkyrie.Api.Simulation.MarketSimulator>();
 var app = builder.Build();
 InitializeOrderBooks(app);
 
-// pipeling & endpoints
+// endpoints
 app.UseWebSockets(); // turns on the 101 middleware
 app.MapOrderEndpoints();
+app.MapExecutionEndpoints();
 app.MapMarketDataEndpoints(); // registers /ws/marketdata
 
 await app.RunAsync();

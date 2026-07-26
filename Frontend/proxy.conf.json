@@ -1,0 +1,23 @@
+{
+  "/orders": {
+    "target": "http://localhost:5000",
+    "secure": false
+  },
+  "/book": {
+    "target": "http://localhost:5000",
+    "secure": false
+  },
+  "/instruments": {
+    "target": "http://localhost:5000",
+    "secure": false
+  },
+  "/sessions": {
+    "target": "http://localhost:5000",
+    "secure": false
+  },
+  "/ws": {
+    "target": "ws://localhost:5000",
+    "secure": false,
+    "ws": true
+  }
+}

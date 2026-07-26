@@ -1,30 +1,53 @@
 ﻿name: CI
 
 on:
-  push: 
-    branches: ["master"]
-    
-  pull_request: 
-    branches: ["master"]
-    
+  push:
+    branches: [ "master" ]
+  
+  pull_request:
+    branches: [ "master" ]
+
 jobs:
-  build:
+  dotnet:
+    name: .NET
     runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
-        
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-          
+
       - name: Restore
         run: dotnet restore Valkyrie.slnx
-        
-        
+
+
       - name: Build
         run: dotnet build Valkyrie.slnx --no-restore -c Release
-        
+
       - name: Test
         run: dotnet test Valkyrie.slnx --no-build -c Release --verbosity normal
+
+  angular:
+    name: Angular
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: Frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: Frontend
+        run: npm run build
