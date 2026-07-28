@@ -2,6 +2,9 @@
 
 namespace Valkyrie.Api.Simulation.Lobster.Models;
 
+/// <summary>
+/// represents an immutable row from a LOBSTER message file 
+/// </summary>
 public record LobsterMessage(
     decimal SecondsAfterMidnight,
     LobsterEventType EventType,

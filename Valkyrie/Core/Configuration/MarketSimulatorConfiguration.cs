@@ -1,4 +1,7 @@
-﻿namespace Valkyrie.Core.Configuration;
+﻿using Valkyrie.Api.Simulation.Lobster;
+using Valkyrie.Api.Simulation.Lobster.Enums;
+
+namespace Valkyrie.Core.Configuration;
 
 public sealed class MarketSimulatorConfiguration
 {
@@ -8,12 +11,6 @@ public sealed class MarketSimulatorConfiguration
     
     public MarketDataSourceType Source { get; set; } = MarketDataSourceType.Synthetic;
     public HistoricalReplayConfiguration HistoricalReplay { get; set; } = new();
-}
-
-public enum MarketDataSourceType
-{
-    Synthetic,
-    LobsterReplay
 }
 
 public sealed partial class HistoricalReplayConfiguration
@@ -30,8 +27,16 @@ public sealed partial class HistoricalReplayInstrument
     public long SecurityId { get; set; }
     public string Symbol { get; set; } = string.Empty;
 
-    // absolute or relative to the server content root
-    public string ArchivePath { get; set; } = string.Empty;
+    public LobsterDataFormat DataFormat { get; set; } = LobsterDataFormat.CsvDirectory;
+    public string DataPath { get; set; } = string.Empty;
+
+    // midnight on the historical trading date, including exchange offset
+    // e.g 2012-06-21T00:00:00-04:00
+    public DateTimeOffset SessionMidnight { get; set; }
+    
+    public int BookDepth { get; set; } = 10; // matches what's in the archive filename
+    // doesn't it make more sense to just use raw csvs directly
+    // i could resutructure it such that it reads the zips on first run(if the repo has zips) then use csvs from thereon
 }
 
 
