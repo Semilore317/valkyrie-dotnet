@@ -61,7 +61,7 @@ public sealed class ZipLobsterInputProviderTests
 
         var provider = CreateProvider(directory.DirectoryPath);
 
-        Action open = () =>
+        var open = () =>
         {
             using var input = provider.Open(CreateInstrument());
         };
