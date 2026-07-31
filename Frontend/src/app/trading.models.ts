@@ -23,6 +23,16 @@ export interface TradeMessage{
   price: number;
   quantity: number;
   filledAt: string; // ISO timestamp from the API
+  aggressorSide: OrderSide;
+}
+
+export interface MarketTradeMessage{
+  type: 'marketTrade';
+  securityId: number;
+  price: number;
+  quantity: number;
+  occurredAt: string;
+  aggressorSide: OrderSide;
 }
 
 export interface TradingSession{
@@ -30,7 +40,7 @@ export interface TradingSession{
   createdAt: string;
 }
 
-export type MarketMessage = BookMessage | TradeMessage;
+export type MarketMessage = BookMessage | TradeMessage | MarketTradeMessage;
 export type LiquidityRole = 'Maker' | 'Taker';
 
 export interface PlaceOrderRequest{

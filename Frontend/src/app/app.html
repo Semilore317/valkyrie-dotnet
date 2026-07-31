@@ -29,10 +29,12 @@
         <span class="id">{{ instrument.securityId }}</span>
       </span>
 
-      <span class="row2">
-        <span class="px num">{{instrumentMidDollars(instrument.securityId) === null
-          ? '-'
-          : instrumentMidDollars(instrument.securityId)!.toFixed()}}</span>
+          <span class="row2">
+        <span class="px num">{{
+            instrumentMidDollars(instrument.securityId) === null
+              ? '-'
+              : instrumentMidDollars(instrument.securityId)!.toFixed()
+          }}</span>
         <span class="chg">
           MID
         </span>
@@ -345,7 +347,7 @@
     <section class="panel tape-panel">
       <div class="phead">
         <h2>Trade Tape</h2>
-        <span class="meta">recent fills</span>
+        <span class="meta">market prints</span>
       </div>
 
       <div class="tape-head">
@@ -362,13 +364,13 @@
             [class.buy]="trade.side === 'buy'"
             [class.sell]="trade.side === 'sell'"
           >
-            <span class="tm num">{{ trade.filledAt | date: 'HH:mm:ss.SSS' }}</span>
-            <span class="tp num">{{ (trade.price / 100).toFixed(2) }}</span>
+            <span class="tm num">{{ trade.occurredAt.substring(11, 23) }}</span>
+            <span class="tp num">{{ formatTapePrice(trade.price) }}</span>
             <span class="ts num">{{ trade.quantity.toLocaleString() }}</span>
             <span class="td">{{ trade.side }}</span>
           </div>
         } @empty {
-          <p class="empty">Waiting for trades...</p>
+          <p class="empty">Waiting for market prints...</p>
         }
       </div>
     </section>

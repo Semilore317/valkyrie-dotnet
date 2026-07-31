@@ -49,6 +49,7 @@ public sealed class WebSocketMarketDataPublisher(MarketDataHub Hub) : IMarketDat
             trade.SecurityId,
             trade.Price,
             trade.Quantity,
+            trade.OccurredAt,
             aggressorSide = ToWireSide(trade.AggressorSide)
         }));
     }

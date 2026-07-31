@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using Valkyrie.Api.Dto;
 using Valkyrie.Api.MarketData;
 using Valkyrie.Api.Simulation.Lobster.Models;
 using Valkyrie.Core.Configuration;
@@ -45,7 +46,8 @@ public sealed class LobsterReplayMarketSource(
     private async Task ReplayOnceAsync(
         HistoricalReplayInstrument instrument,
         bool repeatedPass,
-        CancellationToken token)
+        CancellationToken token
+    )
     {
         var minimumUpdateInterval =
             GetMinimumUpdateInterval();
@@ -54,19 +56,36 @@ public sealed class LobsterReplayMarketSource(
         {
             await delay.DelayAsync(
                 minimumUpdateInterval,
-                token);
+                token
+            );
         }
 
         LobsterReplayFrame? lastPublished = null;
         LobsterReplayFrame? pending = null;
 
+        var pendingMarketTrades = new List<MarketTradeEvent>();
+
         await foreach (
-            var frame in reader.ReadAsync(instrument, token))
+            var frame in reader.ReadAsync(
+                instrument,
+                token
+            )
+        )
         {
+            var marketTrade =
+                LobsterMarketTradeMapper.Map(frame);
+
+            if (marketTrade is not null)
+                pendingMarketTrades.Add(marketTrade);
+
             pending = frame;
 
             if (lastPublished is null)
             {
+                PublishPendingMarketTrades(
+                    pendingMarketTrades
+                );
+
                 publisher.PublishBook(frame.Snapshot);
 
                 lastPublished = frame;
@@ -81,14 +100,20 @@ public sealed class LobsterReplayMarketSource(
 
             var scaledDelay = ScaleDelay(
                 historicalDelay,
-                _configuration.PlaybackSpeed);
+                _configuration.PlaybackSpeed
+            );
 
             if (scaledDelay < minimumUpdateInterval)
                 continue;
 
             await delay.DelayAsync(
                 scaledDelay,
-                token);
+                token
+            );
+
+            PublishPendingMarketTrades(
+                pendingMarketTrades
+            );
 
             publisher.PublishBook(frame.Snapshot);
 
@@ -100,7 +125,8 @@ public sealed class LobsterReplayMarketSource(
         {
             throw new InvalidDataException(
                 $"LOBSTER dataset for '{instrument.Symbol}' " +
-                "does not contain any replay frames.");
+                "does not contain any replay frames."
+            );
         }
 
         if (pending is null)
@@ -112,7 +138,8 @@ public sealed class LobsterReplayMarketSource(
 
         var finalScaledDelay = ScaleDelay(
             finalHistoricalDelay,
-            _configuration.PlaybackSpeed);
+            _configuration.PlaybackSpeed
+        );
 
         var finalDelay =
             finalScaledDelay < minimumUpdateInterval
@@ -121,9 +148,28 @@ public sealed class LobsterReplayMarketSource(
 
         await delay.DelayAsync(
             finalDelay,
-            token);
+            token
+        );
+
+        PublishPendingMarketTrades(
+            pendingMarketTrades
+        );
 
         publisher.PublishBook(pending.Snapshot);
+    }
+
+    private void PublishPendingMarketTrades(
+        List<MarketTradeEvent> pendingMarketTrades
+    )
+    {
+        foreach (var marketTrade in pendingMarketTrades)
+        {
+            publisher.PublishMarketTrade(
+                marketTrade
+            );
+        }
+
+        pendingMarketTrades.Clear();
     }
 
     private TimeSpan GetMinimumUpdateInterval()

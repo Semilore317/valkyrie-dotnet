@@ -14,7 +14,8 @@ import {
   Execution,
   MarketMessage,
   WorkingOrder,
-  TradeMessage
+  TradeMessage,
+  OrderSide
 } from './trading.models';
 
 interface Instrument {
@@ -37,11 +38,12 @@ interface LadderRow {
 }
 
 interface TapeRow {
-  id: string,
+  id: number;
+  securityId: number;
   price: number;
   quantity: number;
-  side: 'buy' | 'sell';
-  filledAt: string;
+  side: OrderSide;
+  occurredAt: string;
 }
 
 interface TracePoint {
@@ -59,13 +61,19 @@ interface TracePoint {
 export class App implements OnInit, OnDestroy {
   private readonly marketData = inject(MarketDataService);
   private readonly api = inject(TradingApiService);
+  readonly activeId = signal(1);
 
-  readonly tape = signal<TapeRow[]>([]);
   readonly traceHover = signal<TracePoint | null>(null);
   private traceTimer?: number;
   readonly connectionStatus = signal('CONNECTING');
   readonly dark = signal(this.getInitialTheme());
-  readonly activeId = signal(1);
+
+  readonly tapesByInstrument = signal<Record<number, TapeRow[]>>({});
+  readonly tape = computed(
+    () => this.tapesByInstrument()[this.activeId()] ?? []
+  );
+
+  private nextTapeRowId = 0;
 
   readonly workingOrders = signal<WorkingOrder[]>([]);
   readonly sessionId = signal<string | null>(null);
@@ -252,10 +260,20 @@ export class App implements OnInit, OnDestroy {
   instrumentMidDollars(securityId: number): number | null {
     const midInCents = this.latestMidsByInstrument()[securityId];
 
-    if(midInCents === undefined)
+    if (midInCents === undefined)
       return null;
 
     return midInCents / 100;
+  }
+
+  formatTapePrice(priceInCents: number): string {
+    const priceInDollars = priceInCents / 100;
+
+    // ordinary cent-priced executions use two decimals
+    // sub-cent prints retain precision
+    return Number.isInteger(priceInCents)
+      ? priceInDollars.toFixed(2)
+      : priceInDollars.toFixed(4);
   }
 
   onTraceMove(event: MouseEvent): void {
@@ -435,28 +453,63 @@ export class App implements OnInit, OnDestroy {
   }
 
   private handleMarketMessage(message: MarketMessage): void {
-    if (message.type === 'book') {
-      this.applyBook(message);
-      return;
+    switch (message.type) {
+      case 'book':
+        this.applyBook(message);
+        return;
+
+      case 'trade':
+        this.applyTradeToWorkingOrders(message);
+
+        this.appendTapeRow(
+          message.securityId,
+          message.price,
+          message.quantity,
+          message.aggressorSide,
+          message.filledAt
+        );
+
+        return;
+
+      case 'marketTrade':
+        this.appendTapeRow(
+          message.securityId,
+          message.price,
+          message.quantity,
+          message.aggressorSide,
+          message.occurredAt
+        );
+
+        return;
     }
+  }
 
-    // a trade message has arrived, update and working order involved in this execution
-    this.applyTradeToWorkingOrders(message);
+  private appendTapeRow(
+    securityId: number,
+    price: number,
+    quantity: number,
+    side: OrderSide,
+    occurredAt: string
+  ): void {
+    const row: TapeRow = {
+      id: ++this.nextTapeRowId,
+      securityId,
+      price,
+      quantity,
+      side,
+      occurredAt
+    };
 
-    const side: TapeRow['side'] =
-      this.bestAsk() !== null && message.price >= this.bestAsk()!
-        ? 'buy'
-        : 'sell';
+    this.tapesByInstrument.update(
+      tapes => ({
+        ...tapes,
 
-    this.tape.update(rows => [
-      {
-        id: `${message.filledAt}-${message.price}-${message.quantity}`,
-        price: message.price,
-        quantity: message.quantity,
-        side,
-        filledAt: message.filledAt
-      }, ...rows,
-    ].slice(0, 60));
+        [securityId]: [
+          row,
+          ...(tapes[securityId] ?? [])
+        ].slice(0, 60)
+      })
+    );
   }
 
   private applyBook(book: BookMessage): void {

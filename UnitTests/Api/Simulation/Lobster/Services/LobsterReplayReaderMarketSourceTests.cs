@@ -8,6 +8,7 @@ using Valkyrie.Api.Simulation.Lobster.Input;
 using Valkyrie.Api.Simulation.Lobster.Services;
 using Valkyrie.Core.Configuration;
 using Valkyrie.MatchingEngine;
+using Valkyrie.Orders;
 
 namespace UnitTests.Api.Simulation.Lobster.Services;
 
@@ -86,6 +87,117 @@ public sealed class LobsterReplayReaderMarketSourceTests
 
         replayDelay.Delays.Should().ContainSingle();
         replayDelay.Delays[0].Should().Be(TimeSpan.FromMilliseconds(200));
+    }
+
+    [Fact]
+    public async Task RunAsync_PublishesExecutionsSkippedByBookCoalescing()
+    {
+        var provider = new StubInputProvider(
+            messageRows:
+            [
+                "34200,1,1001,50,100100,1",
+                "34200.05,4,2001,40,100200,-1",
+                "34200.10,5,0,25,100250,1",
+                "34200.50,3,1001,50,100100,1"
+            ],
+            orderBookRows:
+            [
+                "100200,100,100100,200",
+                "100200,60,100100,200",
+                "100200,60,100100,200",
+                "100300,80,100200,180"
+            ]
+        );
+
+        var publisher =
+            new CapturingPublisher();
+
+        var replayDelay =
+            new RecordingReplayDelay();
+
+        var configuration = CreateConfiguration(
+            playbackSpeed: 1,
+            maxUpdatesPerSecond: 5
+        );
+
+        var source = CreateSource(
+            provider,
+            publisher,
+            replayDelay,
+            configuration
+        );
+
+        await source.RunAsync(
+            CancellationToken.None
+        );
+
+        publisher.BookSnapshots
+            .Should()
+            .HaveCount(2);
+
+        publisher.MarketTrades
+            .Should()
+            .HaveCount(2);
+
+        var visibleExecution =
+            publisher.MarketTrades[0];
+
+        visibleExecution.Price
+            .Should()
+            .Be(1_002m);
+
+        visibleExecution.Quantity
+            .Should()
+            .Be(40u);
+
+        visibleExecution.AggressorSide
+            .Should()
+            .Be(Side.Buy);
+
+        visibleExecution.OccurredAt
+            .Should()
+            .Be(
+                SessionMidnight
+                    .AddHours(9)
+                    .AddMinutes(30)
+                    .AddMilliseconds(50)
+            );
+
+        var hiddenExecution =
+            publisher.MarketTrades[1];
+
+        hiddenExecution.Price
+            .Should()
+            .Be(1_002.5m);
+
+        hiddenExecution.Quantity
+            .Should()
+            .Be(25u);
+
+        hiddenExecution.AggressorSide
+            .Should()
+            .Be(Side.Sell);
+
+        hiddenExecution.OccurredAt
+            .Should()
+            .Be(
+                SessionMidnight
+                    .AddHours(9)
+                    .AddMinutes(30)
+                    .AddMilliseconds(100)
+            );
+
+        publisher.Trades
+            .Should()
+            .BeEmpty();
+
+        replayDelay.Delays
+            .Should()
+            .ContainSingle();
+
+        replayDelay.Delays[0]
+            .Should()
+            .Be(TimeSpan.FromMilliseconds(500));
     }
 
     [Fact]
