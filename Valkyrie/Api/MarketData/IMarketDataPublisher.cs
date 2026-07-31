@@ -7,4 +7,5 @@ public interface IMarketDataPublisher
 {
     void PublishTrade(TradeEvent tradeEvent);
     void PublishBook(OrderBookSnapshot bookSnapshot);
+    void PublishMarketTrade(MarketTradeEvent marketTradeEvent);
 }

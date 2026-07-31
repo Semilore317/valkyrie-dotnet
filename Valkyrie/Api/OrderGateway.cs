@@ -21,11 +21,12 @@ public sealed class OrderGateway(
 
     private void Broadcast(
         MatchResult result,
-        OrderBookSnapshot? snapshot
+        OrderBookSnapshot? snapshot,
+        Side aggressorSide
     )
     {
         foreach (var fill in result.Fills)
-            publisher.PublishTrade(TradeEvent.From(fill));
+            publisher.PublishTrade(TradeEvent.From(fill, aggressorSide));
 
         if (snapshot != null)
             publisher.PublishBook(snapshot);
@@ -76,7 +77,7 @@ public sealed class OrderGateway(
             engine.TryGetSnapshot(request.SecurityId, out snapshot);
         }
 
-        Broadcast(result, snapshot);
+        Broadcast(result, snapshot, aggressorSide: request.Side);
         return OrderAck.From(id, result);
     }
 
@@ -130,7 +131,7 @@ public sealed class OrderGateway(
             engine.TryGetSnapshot(securityId, out snapshot);
         }
 
-        Broadcast(result, snapshot);
+        Broadcast(result, snapshot, aggressorSide: request.Side);
         return OrderAck.From(id, result);
     }
 }

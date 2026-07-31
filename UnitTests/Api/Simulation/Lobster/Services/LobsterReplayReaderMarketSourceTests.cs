@@ -76,14 +76,14 @@ public sealed class LobsterReplayReaderMarketSourceTests
             maxUpdatesPerSecond: 5);
 
 
-        var source = CreateSource( provider, publisher, replayDelay, configuration );
+        var source = CreateSource(provider, publisher, replayDelay, configuration);
 
         await source.RunAsync(CancellationToken.None);
 
         publisher.BookSnapshots.Should().HaveCount(2);
         publisher.BookSnapshots[0].Bid.Should().Be(1001);
         publisher.BookSnapshots[1].Bid.Should().Be(1002);
-        
+
         replayDelay.Delays.Should().ContainSingle();
         replayDelay.Delays[0].Should().Be(TimeSpan.FromMilliseconds(200));
     }
@@ -109,7 +109,7 @@ public sealed class LobsterReplayReaderMarketSourceTests
         );
         var source = CreateSource(provider, publisher, replayDelay, configuration);
         await source.RunAsync(cancellation.Token);
-        
+
         publisher.BookSnapshots.Should().HaveCount(2);
         provider.OpenCount.Should().Be(2);
 
@@ -158,7 +158,7 @@ public sealed class LobsterReplayReaderMarketSourceTests
         assertion.Which.Message.Should().Contain("greater than zero");
     }
 
-    
+
     private static LobsterReplayMarketSource CreateSource(
         StubInputProvider provider,
         CapturingPublisher publisher,
@@ -227,10 +227,13 @@ public sealed class LobsterReplayReaderMarketSourceTests
         Action<int>? onBookPublished = null
     ) : IMarketDataPublisher
     {
+        public List<TradeEvent> Trades { get; } = [];
         public List<OrderBookSnapshot> BookSnapshots { get; } = [];
+        public List<MarketTradeEvent> MarketTrades { get; } = [];
 
         public void PublishTrade(TradeEvent tradeEvent)
         {
+            Trades.Add(tradeEvent);
         }
 
         public void PublishBook(OrderBookSnapshot bookSnapshot)
@@ -238,6 +241,11 @@ public sealed class LobsterReplayReaderMarketSourceTests
             BookSnapshots.Add(bookSnapshot);
 
             onBookPublished?.Invoke(BookSnapshots.Count);
+        }
+
+        public void PublishMarketTrade(MarketTradeEvent marketTradeEvent)
+        {
+            MarketTrades.Add(marketTradeEvent);
         }
     }
 

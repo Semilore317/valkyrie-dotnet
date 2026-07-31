@@ -14,4 +14,7 @@ public class NoOpMarketDataPublisher: IMarketDataPublisher
 
     public void PublishBook(OrderBookSnapshot bookSnapshot)
     {}
+
+    public void PublishMarketTrade(MarketTradeEvent marketTradeEvent)
+    {}
 }
