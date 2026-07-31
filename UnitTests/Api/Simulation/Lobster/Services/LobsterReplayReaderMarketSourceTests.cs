@@ -56,7 +56,7 @@ public sealed class LobsterReplayReaderMarketSourceTests
     [Fact]
     public async Task RunAsync_FlushesFinalPendingSnapshots()
     {
-        var provier = new StubInputProvider(
+        var provider = new StubInputProvider(
             messageRows:
             [
                 "34200,1,1001,50,100100,1",
@@ -74,6 +74,18 @@ public sealed class LobsterReplayReaderMarketSourceTests
         var configuration = CreateConfiguration(
             playbackSpeed: 1,
             maxUpdatesPerSecond: 5);
+
+
+        var source = CreateSource( provider, publisher, replayDelay, configuration );
+
+        await source.RunAsync(CancellationToken.None);
+
+        publisher.BookSnapshots.Should().HaveCount(2);
+        publisher.BookSnapshots[0].Bid.Should().Be(1001);
+        publisher.BookSnapshots[1].Bid.Should().Be(1002);
+        
+        replayDelay.Delays.Should().ContainSingle();
+        replayDelay.Delays[0].Should().Be(TimeSpan.FromMilliseconds(200));
     }
 
     [Fact]
@@ -96,6 +108,13 @@ public sealed class LobsterReplayReaderMarketSourceTests
             loop: true
         );
         var source = CreateSource(provider, publisher, replayDelay, configuration);
+        await source.RunAsync(cancellation.Token);
+        
+        publisher.BookSnapshots.Should().HaveCount(2);
+        provider.OpenCount.Should().Be(2);
+
+        replayDelay.Delays.Should().ContainSingle();
+        replayDelay.Delays[0].Should().Be(TimeSpan.FromMilliseconds(200));
     }
 
     [Theory]

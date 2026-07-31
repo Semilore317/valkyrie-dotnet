@@ -5,6 +5,9 @@ using Valkyrie.Api;
 using Valkyrie.Api.Executions;
 using Valkyrie.Api.MarketData;
 using Valkyrie.Api.Simulation;
+using Valkyrie.Api.Simulation.Lobster.Enums;
+using Valkyrie.Api.Simulation.Lobster.Input;
+using Valkyrie.Api.Simulation.Lobster.Services;
 using Valkyrie.Core.Configuration;
 using Valkyrie.Instrument.Configuration;
 using Valkyrie.Logging;
@@ -60,7 +63,31 @@ builder.Services.AddSingleton<MarketDataHub>();
 builder.Services.AddSingleton<IMarketDataPublisher, WebSocketMarketDataPublisher>();
 builder.Services.ConfigureHttpJsonOptions(
     o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-builder.Services.AddSingleton<IMarketDataSource, SyntheticMarketSource>();
+/* Historical playback instead of seeding synthetic data */
+builder.Services.AddSingleton<ILobsterInputProvider, CsvLobsterInputProvider>();
+builder.Services.AddSingleton<ILobsterInputProvider, ZipLobsterInputProvider>();
+builder.Services.AddSingleton<IReplayDelay, SystemReplayDelay>();
+
+// selectable market-data sources
+builder.Services.AddSingleton<SyntheticMarketSource>();
+builder.Services.AddSingleton<LobsterReplayMarketSource>();
+
+builder.Services.AddSingleton<LobsterReplayReader>();
+
+builder.Services.AddSingleton<IMarketDataSource>(
+    services => 
+    {
+        var configuration = services
+        .GetRequiredService<IOptions<MarketSimulatorConfiguration>>()
+        .Value;
+
+        return configuration.Source switch
+        {
+            MarketDataSourceType.Synthetic => services.GetRequiredService<SyntheticMarketSource>(),
+            MarketDataSourceType.LobsterReplay => services.GetRequiredService<LobsterReplayMarketSource>(),
+            _ => throw new InvalidOperationException($"Market-data source {configuration.Source} not supported")
+        };
+    });
 
 // hosted services
 builder.Services.AddHostedService<Valkyrie.Core.Valkyrie>(); // the background service... it still runs
