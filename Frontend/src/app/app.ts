@@ -21,8 +21,6 @@ interface Instrument {
   securityId: number;
   symbol: string;
   name: string;
-  last: number;
-  changePercent: number;
 }
 
 interface Level {
@@ -76,27 +74,20 @@ export class App implements OnInit, OnDestroy {
   readonly executionError = signal('');
 
   readonly instruments = signal<Instrument[]>([
-    {securityId: 1, symbol: 'MSFT', name: 'Microsoft Corp', last: 418.05, changePercent: 1.5},
-    {securityId: 2, symbol: 'AAPL', name: 'Apple Inc', last: 227.15, changePercent: -0.18},
-    {securityId: 3, symbol: 'NVDA', name: 'Space Exploration Technologies Corp', last: 180.55, changePercent: 2.94},
+    {securityId: 1, symbol: 'MSFT', name: 'Microsoft Corp'},
+    {securityId: 2, symbol: 'AAPL', name: 'Apple Inc'},
+    {securityId: 3, symbol: 'AMZN', name: 'Amazon.com Inc'},
+    {securityId: 4, symbol: 'GOOG', name: "Google Inc"},
+    {securityId: 5, symbol: 'INTC', name: "Intel Corp"}
   ]);
 
-  readonly asks = signal<Level[]>([
-    {price: 41810, quantity: 120}, {price: 41815, quantity: 340},
-    {price: 41820, quantity: 120}, {price: 41825, quantity: 560},
-    {price: 41835, quantity: 150}, {price: 41850, quantity: 700},
-  ]);
-
-  readonly bids = signal<Level[]>([
-    {price: 41800, quantity: 260}, {price: 41795, quantity: 480},
-    {price: 41790, quantity: 190}, {price: 41780, quantity: 620},
-    {price: 41770, quantity: 300}, {price: 41755, quantity: 540},
-  ]);
+  readonly asks = signal<Level[]>([]);
+  readonly bids = signal<Level[]>([]);
 
   readonly side = signal<'buy' | 'sell'>('buy');
   readonly trader = signal('Jon Snow');
-  readonly priceInput = signal('418.50');
-  readonly quantityInput = signal('500');
+  readonly quantityInput = signal('');
+  readonly priceInput = signal('');
   readonly submitError = signal('');
   readonly isSubmitting = signal(false);
   readonly tracesByInstrument = signal<Record<number, number[]>>({});
@@ -255,7 +246,16 @@ export class App implements OnInit, OnDestroy {
     const cachedBook = this.booksByInstrument()[id];
 
     this.bids.set(cachedBook?.bids ?? []);
-    this.bids.set(cachedBook?.asks ?? []);
+    this.asks.set(cachedBook?.asks ?? []);
+  }
+
+  instrumentMidDollars(securityId: number): number | null {
+    const midInCents = this.latestMidsByInstrument()[securityId];
+
+    if(midInCents === undefined)
+      return null;
+
+    return midInCents / 100;
   }
 
   onTraceMove(event: MouseEvent): void {
@@ -516,7 +516,7 @@ export class App implements OnInit, OnDestroy {
     if (savedTheme === 'light')
       return false;
 
-    if(typeof window === 'undefined' || typeof window.matchMedia !== 'function')
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function')
       return false;
 
     //first visit: follow the device/broswer prefernce

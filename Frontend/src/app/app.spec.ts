@@ -4,11 +4,21 @@ import {vi} from 'vitest';
 import {App} from './app';
 import {MarketDataService} from './MarketData.service';
 import {TradingApiService} from './TradingApi.service';
+import {MarketMessage} from './trading.models';
 
 describe('App', () => {
   const marketData = {
     connect: vi.fn(),
     disconnect: vi.fn(),
+  };
+
+  const marketData = {
+    connect: vi.fn<(
+      securityIds: number[],
+      onMessage:(message: MarketMessage) => void,
+      onStatus:(status: string) => void
+    ) => void>(),
+    disconnect: vi.fn()
   };
 
   const tradingApi = {
@@ -123,5 +133,30 @@ describe('App', () => {
     ).toHaveBeenCalledWith(
       'existing-session-id'
     );
+  });
+
+  if('subscribes to every LOBSTER instrument', () =>{
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    expect(
+      component.instruments().map(
+        instrument => ({
+          securityId: instrument.securityId,
+          symbol: instrument.symbol
+        })
+      )
+    ).toEqual([
+      {securityId: 1, symbol: 'MSFT'},
+      {securityId: 2, symbol: 'AAPL'},
+      {securityId: 3, symbol: 'AMZN'},
+      {securityId: 4, symbol: 'GOOG'},
+      {securityId: 5, symbol: 'INTC'},
+    ]);
+
+    const [securityIds] = marketData.connect.mock.calls[0];
+
+    expect(securityIds).toEqual([1,2,3,4,5]);
   });
 });
