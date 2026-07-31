@@ -8,11 +8,6 @@ import {MarketMessage} from './trading.models';
 
 describe('App', () => {
   const marketData = {
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-  };
-
-  const marketData = {
     connect: vi.fn<(
       securityIds: number[],
       onMessage:(message: MarketMessage) => void,
@@ -135,7 +130,7 @@ describe('App', () => {
     );
   });
 
-  if('subscribes to every LOBSTER instrument', () =>{
+  it('subscribes to every LOBSTER instrument', () =>{
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const component = fixture.componentInstance;
