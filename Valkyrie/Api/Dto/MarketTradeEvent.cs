@@ -11,6 +11,6 @@ public record MarketTradeEvent(
     long SecurityId,
     decimal Price,
     uint Quantity,
-    DateTimeOffset OccuredAt,
+    DateTimeOffset OccurredAt,
     Side AggressorSide
 );
