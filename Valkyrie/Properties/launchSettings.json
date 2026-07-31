@@ -9,7 +9,16 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "environmentVariables": {
-        "MarketSimulatorConfiguration__Enabled": "true"
+        "MarketSimulatorConfiguration__Enabled": "true",
+        "MarketSimulatorConfiguration__Source": "Synthetic"
+      }
+    },
+    "historical-replay": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "MarketSimulatorConfiguration__Enabled": "true",
+        "MarketSimulatorConfiguration__Source": "LobsterReplay"
       }
     }
   }
