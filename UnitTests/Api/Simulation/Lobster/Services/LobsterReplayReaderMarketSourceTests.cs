@@ -7,6 +7,7 @@ using Valkyrie.Api.Simulation.Lobster.Enums;
 using Valkyrie.Api.Simulation.Lobster.Input;
 using Valkyrie.Api.Simulation.Lobster.Services;
 using Valkyrie.Core.Configuration;
+using Valkyrie.Instruments;
 using Valkyrie.MatchingEngine;
 using Valkyrie.Orders;
 
@@ -270,6 +271,51 @@ public sealed class LobsterReplayReaderMarketSourceTests
         assertion.Which.Message.Should().Contain("greater than zero");
     }
 
+    [Fact]
+    public async Task RunAsync_RejectsTickerThatDoesNotMatchCatalogue()
+    {
+        var configuration = CreateConfiguration(
+            playbackSpeed: 1,
+            maxUpdatesPerSecond: 5);
+
+        configuration.HistoricalReplay.Instruments[0].Ticker = "MSFT";
+
+        var source = CreateSource(
+            CreateSingleFrameProvider(),
+            new CapturingPublisher(),
+            new RecordingReplayDelay(),
+            configuration);
+
+        var action = () => source.RunAsync(CancellationToken.None);
+
+        await action.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("*ticker `MSFT`*security ID `2`*catalogue ticker `AAPL`*");
+    }
+
+    [Fact]
+    public async Task RunAsync_RejectsSecurityIdMissingFromCatalogue()
+    {
+        var configuration = CreateConfiguration(
+            playbackSpeed: 1,
+            maxUpdatesPerSecond: 5
+        );
+
+        configuration.HistoricalReplay.Instruments[0].SecurityId = 999;
+
+        var source = CreateSource(
+            CreateSingleFrameProvider(),
+            new CapturingPublisher(),
+            new RecordingReplayDelay(),
+            configuration);
+
+        var action = () => source.RunAsync(CancellationToken.None);
+
+        await action.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("*security ID '999'*");
+    }
+
 
     private static LobsterReplayMarketSource CreateSource(
         StubInputProvider provider,
@@ -280,7 +326,12 @@ public sealed class LobsterReplayReaderMarketSourceTests
     {
         var reader = new LobsterReplayReader([provider]);
 
-        return new LobsterReplayMarketSource(reader, publisher, Options.Create(configuration), replayDelay);
+        var catalogue = new InstrumentCatalogue([
+            new Security(2, "AAPL", "Apple Inc.")
+        ]);
+
+        return new LobsterReplayMarketSource(
+            reader, publisher, Options.Create(configuration), replayDelay, catalogue);
     }
 
     private sealed class RecordingReplayDelay : IReplayDelay
@@ -319,7 +370,7 @@ public sealed class LobsterReplayReaderMarketSourceTests
         return new HistoricalReplayInstrument
         {
             SecurityId = 2,
-            Symbol = "AAPL",
+            Ticker = "AAPL",
             DataFormat = LobsterDataFormat.CsvDirectory,
             DataPath = ".",
             SessionMidnight = SessionMidnight,

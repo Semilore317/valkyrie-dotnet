@@ -3,6 +3,7 @@ using Valkyrie.Api.Dto;
 using Valkyrie.Api.MarketData;
 using Valkyrie.Api.Simulation.Lobster.Models;
 using Valkyrie.Core.Configuration;
+using Valkyrie.Instruments;
 
 namespace Valkyrie.Api.Simulation.Lobster.Services;
 
@@ -10,7 +11,8 @@ public sealed class LobsterReplayMarketSource(
     LobsterReplayReader reader,
     IMarketDataPublisher publisher,
     IOptions<MarketSimulatorConfiguration> options,
-    IReplayDelay delay
+    IReplayDelay delay,
+    InstrumentCatalogue instrumentCatalogue
 ) : IMarketDataSource
 {
     private readonly HistoricalReplayConfiguration _configuration = options.Value.HistoricalReplay;
@@ -124,7 +126,7 @@ public sealed class LobsterReplayMarketSource(
         if (lastPublished is null)
         {
             throw new InvalidDataException(
-                $"LOBSTER dataset for '{instrument.Symbol}' " +
+                $"LOBSTER dataset for '{instrument.Ticker}' " +
                 "does not contain any replay frames."
             );
         }
@@ -210,7 +212,25 @@ public sealed class LobsterReplayMarketSource(
             .FirstOrDefault(group => group.Count() > 1);
 
         if (duplicateInstrument != null)
-            throw new InvalidOperationException("Historical replay instruments must be unique"
-                                                + $"security ID: {duplicateInstrument.Key}");
+            throw new InvalidOperationException("Historical replay instruments must have unique security IDs. "
+                                                + $"Duplicate security ID: '{duplicateInstrument.Key}'.");
+
+        foreach (var replayInstrument in _configuration.Instruments)
+        {
+            if (string.IsNullOrWhiteSpace(replayInstrument.Ticker))
+                throw new InvalidOperationException(
+                    "Historical replay instrument ticker cannot be empty");
+
+            var catalogueInstrument = instrumentCatalogue.Get(replayInstrument.SecurityId);
+
+            if (!string.Equals(
+                    replayInstrument.Ticker,
+                    catalogueInstrument.Ticker,
+                    StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException(
+                    $"Historical replay ticker `{replayInstrument.Ticker}` " +
+                    $"for security ID `{replayInstrument.SecurityId}` does not match " +
+                    $"catalogue ticker `{catalogueInstrument.Ticker}`.");
+        }
     }
 }

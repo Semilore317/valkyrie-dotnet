@@ -99,7 +99,7 @@ public sealed class ZipLobsterInputProviderTests
     [InlineData("MSFT", 2012, 6, 21)]
     [InlineData("AAPL", 2012, 6, 22)]
     public void Open_RejectsDatasetThatDoesNotMatchConfiguredInstrument(
-        string configuredSymbol,
+        string configuredTicker,
         int year,
         int month,
         int day
@@ -115,7 +115,7 @@ public sealed class ZipLobsterInputProviderTests
         var provider = CreateProvider(directory.DirectoryPath);
         var instrument = CreateInstrument();
 
-        instrument.Symbol = configuredSymbol;
+        instrument.Ticker = configuredTicker;
         instrument.SessionMidnight = new DateTimeOffset(
             year, month, day, 0, 0, 0, TimeSpan.FromHours(-4));
 
@@ -126,7 +126,7 @@ public sealed class ZipLobsterInputProviderTests
         
         open.Should()
             .Throw<InvalidDataException>()
-        .WithMessage($"*does not match configured symbol*session date*");
+        .WithMessage($"*does not match configured ticker*session date*");
 
     }
 
@@ -140,7 +140,7 @@ public sealed class ZipLobsterInputProviderTests
         return new HistoricalReplayInstrument
         {
             SecurityId = 2,
-            Symbol = "AAPL",
+            Ticker = "AAPL",
             DataFormat = LobsterDataFormat.ZipArchive,
             DataPath = "sample.zip",
             SessionMidnight = new DateTimeOffset(

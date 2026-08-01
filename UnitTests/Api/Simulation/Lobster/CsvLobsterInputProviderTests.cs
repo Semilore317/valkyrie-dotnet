@@ -41,7 +41,7 @@ public sealed class CsvLobsterInputProviderTests
         var provider = CreateProvider(directory.DirectoryPath);
         var instrument = CreateInstrument();
 
-        instrument.Symbol = instrumentName;
+        instrument.Ticker = instrumentName;
         instrument.SessionMidnight = new DateTimeOffset(
             year, month, day, 0, 0, 0, TimeSpan.FromHours(-4));
         
@@ -51,7 +51,7 @@ public sealed class CsvLobsterInputProviderTests
         };
         open.Should()
             .Throw<InvalidDataException>()
-            .WithMessage("*does not match configured symbol*session date*");
+            .WithMessage("*does not match configured ticker*session date*");
     }
 
     private sealed class TestHostEnvironment(string contentRoot) : IHostEnvironment
@@ -93,7 +93,7 @@ public sealed class CsvLobsterInputProviderTests
         return new HistoricalReplayInstrument
         {
             SecurityId = 2,
-            Symbol = "AAPL",
+            Ticker = "AAPL",
             DataFormat = LobsterDataFormat.CsvDirectory,
             DataPath = ".",
             SessionMidnight = new DateTimeOffset(

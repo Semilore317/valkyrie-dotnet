@@ -154,7 +154,7 @@ public sealed class LobsterReplayReaderTests
         return new HistoricalReplayInstrument
         {
             SecurityId = 2,
-            Symbol = "AAPL",
+            Ticker = "AAPL",
             DataFormat = LobsterDataFormat.CsvDirectory,
             DataPath = ".",
             SessionMidnight = SessionMidnight,

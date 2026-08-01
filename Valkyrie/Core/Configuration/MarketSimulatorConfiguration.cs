@@ -23,7 +23,7 @@ public sealed partial class HistoricalReplayConfiguration
 public sealed partial class HistoricalReplayInstrument
 {
     public long SecurityId { get; set; }
-    public string Symbol { get; set; } = string.Empty;
+    public string Ticker { get; set; } = string.Empty;
 
     public LobsterDataFormat DataFormat { get; set; } = LobsterDataFormat.CsvDirectory;
     public string DataPath { get; set; } = string.Empty;
