@@ -1,10 +1,34 @@
 # Valkyrie
 
+
 Valkyrie is an in-memory limit-order book and matching engine built with C# and .NET 10.
 
-It includes custom FIFO and pro-rata matching algorithms, multi-instrument order books, an ASP.NET Core API, live WebSocket market data, a synthetic market simulator, and an Angular trading dashboard.
+It includes custom FIFO and pro-rata matching algorithms, multi-instrument order books, an ASP.NET Core API, live WebSocket market data, synthetic market simulation, LOBSTER historical market-data replay, and an Angular trading dashboard.
 
 No exchange or order-book libraries are used. The book structures, matching logic, allocation mathematics, and market-data pipeline are implemented from scratch.
+
+![Valkyrie dashboard showing five instruments, live market depth, order entry, market prints, working orders, and session analytics](docs/assets/valkyrie-demo.gif)
+
+*Historical LOBSTER depth and market prints streaming through the five-instrument Angular dashboard.*
+
+---
+
+## See it in action
+
+| Mode | What it demonstrates | Launch profile |
+|---|---|---|
+| Synthetic market | Executable liquidity flowing through the local matching engine | `simulated-market` |
+| Historical replay | Observational LOBSTER books and market prints streamed at configurable speed | `historical-replay` |
+
+Run either mode with `dotnet run --project Valkyrie --launch-profile <profile>`, then start the Angular client from `Frontend` with `npm start`. Historical replay also requires the [sample-data setup](#obtaining-lobster-data).
+
+---
+
+## Architecture at a glance
+
+![Valkyrie architecture showing the executable local order flow and the separate observational historical-replay flow](diagram.jpg)
+
+Historical replay deliberately joins the system at the market-data layer. It never seeds or mutates the local order book, so displayed historical liquidity cannot execute a user order.
 
 ---
 
@@ -21,11 +45,13 @@ No exchange or order-book libraries are used. The book structures, matching logi
 
 ### Market data
 
-- Live WebSocket market-data feed (currently all seeded from the server, not ACTUAL market data for those instruments)
-- Full order-book snapshots
-- Trade events containing bid and ask order IDs
+- Full WebSocket order-book snapshots
+- Local matching-engine trade events
+- Observed historical market-trade events
 - Per-instrument subscriptions
-- Synthetic multi-instrument market simulator
+- Synthetic multi-instrument market simulation
+- LOBSTER replay from CSV directories or ZIP archives
+- Configurable playback speed, book publication rate, and looping
 
 ### Angular dashboard
 
@@ -124,7 +150,7 @@ The journal supports session-scoped execution history and analytics while keepin
 
 ---
 
-## Architecture
+## Project structure
 
 ```text
 TradingEngineServer/
@@ -186,7 +212,19 @@ In Rider, add the following environment variable to the Valkyrie run configurati
 MarketSimulatorConfiguration__Enabled=true
 ```
 
-### 3. Start the Angular dashboard
+### 3. Start with historical market data
+
+Historical replay requires compatible LOBSTER files that are not included in this repository. Follow the data-placement instructions in [Historical market-data replay](#historical-market-data-replay), then run:
+
+```powershell
+dotnet run --project .\Valkyrie --launch-profile historical-replay
+```
+
+The checked-in profile enables the simulator and selects `LobsterReplay` as its market-data source.
+
+The default configuration replays the 2012-06-21 session at 60x speed, publishes at most five book snapshots per second per instrument, and stops after one pass. Restart the backend to replay it again.
+
+### 4. Start the Angular dashboard
 
 Open a second terminal:
 
@@ -218,32 +256,40 @@ Instrument and simulator configuration lives in `Valkyrie/appsettings.json`.
   "Instruments": [
     {
       "SecurityId": 1,
-      "Symbol": "MSFT"
-    },
-    {
-      "SecurityId": 2,
-      "Symbol": "AAPL"
-    },
-    {
-      "SecurityId": 3,
-      "Symbol": "SPCX"
+      "Ticker": "MSFT",
+      "Name": "Microsoft Corporation"
     }
   ],
   "MarketSimulatorConfiguration": {
     "Enabled": false,
-    "Username": "mm",
-    "Instruments": [
-      {
-        "SecurityId": 1,
-        "SeedPrice": 41800,
-        "TickSize": 1,
-        "OrdersPerSecond": 4.0,
-        "BookDepth": 6
-      }
-    ]
+    "Source": "Synthetic",
+    "HistoricalReplay": {
+      "PlaybackSpeed": 60,
+      "MaxBookUpdatesPerSecond": 5,
+      "Loop": false,
+      "Instruments": [
+        {
+          "SecurityId": 1,
+          "Ticker": "MSFT",
+          "DataFormat": "ZipArchive",
+          "DataPath": "../ReplayData/LOBSTER_SampleFile_MSFT_2012-06-21_10.zip",
+          "SessionMidnight": "2012-06-21T00:00:00-04:00",
+          "BookDepth": 10
+        }
+      ]
+    }
   }
 }
 ```
+
+The top-level instrument catalogue is canonical. Historical replay validates each configured security ID and ticker against that catalogue.
+
+Supported market-data sources are:
+
+- `Synthetic`
+- `LobsterReplay`
+
+`MarketSimulatorConfiguration.Enabled` must be `true` for either source to run. The checked-in launch profiles set these values automatically.
 
 Prices are expressed in integer cents:
 
@@ -253,12 +299,86 @@ Prices are expressed in integer cents:
 
 ---
 
+## Historical market-data replay
+
+> **Important:** Historical books and prints are observational market data. They are not executable liquidity.
+
+The replay source publishes historical book snapshots and `marketTrade` messages directly to the market-data feed. It does not seed or modify the local matching engine.
+
+Orders submitted through the dashboard or REST API continue to execute only against the separate local matching-engine book. A price level displayed from historical replay cannot currently fill a user order, even though both may use the same security ID.
+
+### Obtaining LOBSTER data
+
+The default configuration uses LOBSTER's official depth-10 sample files for MSFT, AAPL, AMZN, GOOG, and INTC. Each download link below points directly to the corresponding ZIP archive hosted by LOBSTER.
+
+LOBSTER data is not mirrored or redistributed by this repository. Access and use remain subject to the data provider's applicable terms.
+
+Create a directory named `ReplayData` at the repository root, then save each archive at the path shown:
+
+| Ticker | Official depth-10 sample | Required local path |
+|---|---|---|
+| MSFT | [Download ZIP](https://php.lobsterdata.com/info/sample/LOBSTER_SampleFile_MSFT_2012-06-21_10.zip) | `ReplayData/LOBSTER_SampleFile_MSFT_2012-06-21_10.zip` |
+| AAPL | [Download ZIP](https://php.lobsterdata.com/info/sample/LOBSTER_SampleFile_AAPL_2012-06-21_10.zip) | `ReplayData/LOBSTER_SampleFile_AAPL_2012-06-21_10.zip` |
+| AMZN | [Download ZIP](https://php.lobsterdata.com/info/sample/LOBSTER_SampleFile_AMZN_2012-06-21_10.zip) | `ReplayData/LOBSTER_SampleFile_AMZN_2012-06-21_10.zip` |
+| GOOG | [Download ZIP](https://php.lobsterdata.com/info/sample/LOBSTER_SampleFile_GOOG_2012-06-21_10.zip) | `ReplayData/LOBSTER_SampleFile_GOOG_2012-06-21_10.zip` |
+| INTC | [Download ZIP](https://php.lobsterdata.com/info/sample/LOBSTER_SampleFile_INTC_2012-06-21_10.zip) | `ReplayData/LOBSTER_SampleFile_INTC_2012-06-21_10.zip` |
+
+The [LOBSTER sample-data page](https://php.lobsterdata.com/info/info/info/DataSamples.php) also provides other book depths. Review the [LOBSTER output structure](https://data.lobsterdata.com/info/DataStructure.php) for message fields, event types, prices, and paired order-book rows. For other tickers or dates, use the [LOBSTER data platform](https://app.lobsterdata.com/) and review its [access documents](https://data.lobsterdata.com/info/Documents.php).
+
+`ReplayData/` and `ReplayDataCache/` are ignored by Git.
+
+### Required dataset pair
+
+Each configured input must contain exactly one matching message/order-book pair for its configured depth:
+
+```text
+{TICKER}_{YYYY-MM-DD}_{start}_{end}_message_{depth}.csv
+{TICKER}_{YYYY-MM-DD}_{start}_{end}_orderbook_{depth}.csv
+```
+
+The two files must have the same prefix. The configured ticker and session date must match that prefix, and the configured book depth must match the filename suffix.
+
+The application rejects:
+
+- Missing or duplicate message/order-book files
+- Message and order-book files from different datasets
+- Ticker or session-date mismatches
+- Replay security IDs or tickers that disagree with the canonical instrument catalogue
+- Invalid or missing configured paths
+
+### Input formats
+
+`DataFormat` supports:
+
+- `ZipArchive`: streams the paired CSV files directly from one ZIP archive without extracting it.
+- `CsvDirectory`: streams one matching pair from the configured directory.
+
+Relative `DataPath` values are resolved from the `Valkyrie` content root. The checked-in `../ReplayData/...` paths therefore refer to the repository-level `ReplayData/` directory.
+
+### Replay behaviour
+
+Each configured instrument replays independently and concurrently.
+
+- `PlaybackSpeed` scales historical elapsed time.
+- `MaxBookUpdatesPerSecond` limits book publication frequency.
+- `Loop` reopens each input after all configured instruments complete.
+- Visible and hidden LOBSTER executions produce `marketTrade` messages.
+- Book snapshots are coalesced to the configured publication rate.
+- Execution prints skipped between book publications are retained and emitted immediately before the next published book.
+- Historical timestamps are preserved on market-trade messages.
+- Instruments are not merged onto one globally ordered historical clock.
+
+With `Loop` set to `false`, restart the backend after the replay completes.
+
+---
+
 ## REST API
 
 The API is available at `http://localhost:5000`.
 
 | Method | Route | Purpose |
 |---|---|---|
+| `GET` | `/instruments` | Read the canonical instrument catalogue |
 | `POST` | `/orders` | Submit an order |
 | `PUT` | `/instruments/{securityId}/orders/{orderId}` | Modify an order |
 | `DELETE` | `/instruments/{securityId}/orders/{orderId}?username={username}` | Cancel an order |
@@ -271,23 +391,24 @@ Prices are integer cents and order sides are `"Buy"` or `"Sell"`.
 
 ### Submit an order
 
-```powershell
-$body = @{
-    securityId = 1
-    username   = "sam"
-    side       = "Sell"
-    price      = 41800
-    quantity   = 100
-} | ConvertTo-Json
+`POST /orders`
 
-Invoke-RestMethod `
-    -Method Post `
-    -Uri "http://localhost:5000/orders" `
-    -ContentType "application/json" `
-    -Body $body
+Request body:
+
+```json
+{
+  "securityId": 1,
+  "username": "sam",
+  "side": "Sell",
+  "price": 41800,
+  "quantity": 100,
+  "sessionId": "optional-session-guid"
+}
 ```
 
-Example response:
+`sessionId` is optional. Supplying one associates resulting executions with that client session.
+
+Successful response: `201 Created`
 
 ```json
 {
@@ -299,21 +420,24 @@ Example response:
 
 ### Read the order book
 
-```powershell
-Invoke-RestMethod -Uri "http://localhost:5000/book/1"
-```
+`GET /book/1`
+
+The security ID is part of the route. A configured instrument returns its current aggregated local matching-engine book; an unknown security ID returns `404 Not Found`.
 
 ### Create a trading session
 
-```powershell
-$session = Invoke-RestMethod `
-    -Method Post `
-    -Uri "http://localhost:5000/sessions" `
-    -ContentType "application/json" `
-    -Body "{}"
+`POST /sessions`
 
-$session
+Successful response: `201 Created`
+
+```json
+{
+  "sessionId": "generated-guid",
+  "createdAt": "UTC timestamp"
+}
 ```
+
+Pass the returned `sessionId` when submitting orders if execution-history tracking is required.
 
 ---
 
@@ -334,10 +458,15 @@ Clients subscribe by instrument:
 }
 ```
 
-The server publishes two message types:
+The server publishes three message types:
 
-- `book`: an aggregated bid/ask snapshot
-- `trade`: a completed match
+- `book`: a complete aggregated bid/ask snapshot
+- `trade`: a local matching-engine fill containing bid and ask order IDs
+- `marketTrade`: an observed external execution containing its historical timestamp but no local order IDs
+
+Only `trade` messages represent fills produced by Valkyrie's matching engine. A `marketTrade` message is observational and must not be interpreted as a fill of a user order.
+
+Local matching-engine prices use integer cents. Historical market-trade prices use decimal cents because LOBSTER hidden executions can occur at sub-cent dollar prices.
 
 ---
 
@@ -377,7 +506,7 @@ It generates:
 
 Simulator orders travel through the same `OrderGateway` and matching engine as API orders.
 
-The simulator is implemented behind `IMarketDataSource`, allowing other sources, such as historical market-data replay, to be added without changing the host or matching engine.
+Synthetic simulation and historical replay both implement `IMarketDataSource`. Configuration selects one source without changing the host or matching engine.
 
 ---
 
@@ -444,4 +573,8 @@ npm test -- --watch=false
 - Market-data updates use full snapshots rather than deltas
 - Order IDs restart with the backend process
 - Session execution updates currently use HTTP refreshes rather than a private execution stream
-- The simulator uses synthetic rather than historical market data
+- Historical replay liquidity is observational and cannot currently execute user orders
+- Order entry remains enabled while historical replay is displayed
+- Historical instruments replay concurrently without one globally merged clock
+- Real LOBSTER archives are local-only and are not exercised by CI
+- Replay data is not downloaded or distributed by this repository
