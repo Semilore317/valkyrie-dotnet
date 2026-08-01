@@ -4,7 +4,15 @@ import {vi} from 'vitest';
 import {App} from './app';
 import {MarketDataService} from './MarketData.service';
 import {TradingApiService} from './TradingApi.service';
-import {MarketMessage} from './trading.models';
+import {Instrument, MarketMessage} from './trading.models';
+
+const configuredInstruments: Instrument[] = [
+  {securityId: 1, ticker: 'MSFT', name: 'Microsoft Corporation'},
+  {securityId: 2, ticker: 'AAPL', name: 'Apple Inc.'},
+  {securityId: 3, ticker: 'AMZN', name: 'Amazon.com, Inc.'},
+  {securityId: 4, ticker: 'GOOG', name: 'Alphabet Inc.'},
+  {securityId: 5, ticker: 'INTC', name: 'Intel Corporation'}
+]
 
 describe('App', () => {
   const marketData = {
@@ -16,7 +24,9 @@ describe('App', () => {
     disconnect: vi.fn()
   };
 
+
   const tradingApi = {
+    getInstruments: vi.fn(() => of(configuredInstruments)),
     createSession: vi.fn(() => of({
       sessionId: 'test-session-id',
       createdAt: '2026-07-25T00:00:00Z',
@@ -130,30 +140,21 @@ describe('App', () => {
     );
   });
 
-  it('subscribes to every LOBSTER instrument', () =>{
+  it("loads configured instruments before subscribing",
+    () => {
     const fixture = TestBed.createComponent(App);
+
     fixture.detectChanges();
+
     const component = fixture.componentInstance;
 
-    expect(
-      component.instruments().map(
-        instrument => ({
-          securityId: instrument.securityId,
-          symbol: instrument.symbol
-        })
-      )
-    ).toEqual([
-      {securityId: 1, symbol: 'MSFT'},
-      {securityId: 2, symbol: 'AAPL'},
-      {securityId: 3, symbol: 'AMZN'},
-      {securityId: 4, symbol: 'GOOG'},
-      {securityId: 5, symbol: 'INTC'},
-    ]);
+    expect(tradingApi.getInstruments).toHaveBeenCalledOnce();
+    expect(component.instruments()).toEqual(configuredInstruments);
 
     const [securityIds] = marketData.connect.mock.calls[0];
 
     expect(securityIds).toEqual([1,2,3,4,5]);
-  });
+    });
 
   it(
     'keeps historical market prints isolated by instrument',
@@ -169,7 +170,7 @@ describe('App', () => {
       const workingOrder = {
         orderId: 91,
         securityId: 2,
-        symbol: 'AAPL',
+        ticker: 'AAPL',
         username: 'Jon Snow',
         side: 'buy' as const,
         price: 58_500,

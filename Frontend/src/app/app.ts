@@ -15,14 +15,9 @@ import {
   MarketMessage,
   WorkingOrder,
   TradeMessage,
-  OrderSide
+  OrderSide,
+  Instrument
 } from './trading.models';
-
-interface Instrument {
-  securityId: number;
-  symbol: string;
-  name: string;
-}
 
 interface Level {
   price: number;
@@ -81,13 +76,7 @@ export class App implements OnInit, OnDestroy {
   readonly executionsLoading = signal(false);
   readonly executionError = signal('');
 
-  readonly instruments = signal<Instrument[]>([
-    {securityId: 1, symbol: 'MSFT', name: 'Microsoft Corp'},
-    {securityId: 2, symbol: 'AAPL', name: 'Apple Inc'},
-    {securityId: 3, symbol: 'AMZN', name: 'Amazon.com Inc'},
-    {securityId: 4, symbol: 'GOOG', name: "Google Inc"},
-    {securityId: 5, symbol: 'INTC', name: "Intel Corp"}
-  ]);
+  readonly instruments = signal<Instrument[]>([]);
 
   readonly asks = signal<Level[]>([]);
   readonly bids = signal<Level[]>([]);
@@ -224,7 +213,7 @@ export class App implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.applyTheme();
-    this.connectToMarketData();
+    this.loadInstruments();
     this.startTraceSampling();
     this.initializeTradingSession();
   }
@@ -358,7 +347,7 @@ export class App implements OnInit, OnDestroy {
             {
               orderId: ack.orderId,
               securityId: instrument.securityId,
-              symbol: instrument.symbol,
+              ticker: instrument.ticker,
               username: this.trader().trim(),
               side: submittedSide,
               price: this.priceCents(),
@@ -396,6 +385,26 @@ export class App implements OnInit, OnDestroy {
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', this.dark() ? 'dark' : 'light');
     }
+  }
+
+  private loadInstruments(): void {
+    this.api.getInstruments().subscribe({
+      next: instruments => {
+        if(instruments.length === 0) {
+          this.connectionStatus.set('NO INSTRUMENTS');
+          return;
+        }
+
+        this.instruments.set(instruments);
+        this.activeId.set(instruments[0].securityId);
+
+        this.connectToMarketData();
+      },
+
+      error: () => {
+        this.connectionStatus.set('CATALOGUE ERROR');
+      }
+    });
   }
 
   private connectToMarketData(): void {

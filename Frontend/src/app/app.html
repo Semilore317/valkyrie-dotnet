@@ -25,7 +25,7 @@
                 (click)="select(instrument.securityId)"
         >
       <span class="tk">
-        <span class="sym">{{ instrument.symbol }}</span>
+        <span class="sym">{{ instrument.ticker}}</span>
         <span class="id">{{ instrument.securityId }}</span>
       </span>
 
@@ -73,7 +73,7 @@
   <section class="strip" aria-label="Selected Instrument Summary">
     <div class="cell name">
       <h1>
-        {{ activeInstrument()?.symbol }}
+        {{ activeInstrument()?.ticker}}
         <em>
           {{ activeInstrument()?.name }} · id {{ activeInstrument()?.securityId }}
         </em>
@@ -212,7 +212,7 @@
       <section class="panel">
         <div class="phead">
           <h2>New Order</h2>
-          <span class="meta">{{ activeInstrument()?.symbol }} ·  id {{ activeInstrument()?.securityId }}</span>
+          <span class="meta">{{ activeInstrument()?.ticker}} ·  id {{ activeInstrument()?.securityId }}</span>
         </div>
 
 
@@ -315,7 +315,7 @@
                 </span>
 
                 <span class="om">
-                  {{ order.symbol }} · {{ order.quantity }} sh
+                  {{ order.ticker}} · {{ order.quantity }} sh
                 </span>
               </div>
 

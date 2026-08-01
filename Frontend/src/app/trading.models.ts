@@ -1,5 +1,11 @@
 ﻿export type OrderSide = 'buy' | 'sell';
 
+export interface Instrument{
+  securityId: number;
+  ticker: string;
+  name: string;
+}
+
 export interface Level{
   price: number;
   quantity: number;
@@ -66,7 +72,7 @@ export interface OrderAck{
 export interface WorkingOrder{
   orderId: number;
   securityId: number;
-  symbol: string;
+  ticker: string;
   username: string;
   side: OrderSide;
   price: number;
