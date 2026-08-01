@@ -1,7 +1,7 @@
-using Instruments;
 using Valkyrie.OrderBook;
 using Valkyrie.Orders;
 using FluentAssertions;
+using Valkyrie.Instruments;
 
 namespace UnitTests;
 

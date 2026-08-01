@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using Instruments;
 using Microsoft.Extensions.Options;
 using Valkyrie.Api;
 using Valkyrie.Api.Executions;
@@ -10,6 +9,7 @@ using Valkyrie.Api.Simulation.Lobster.Input;
 using Valkyrie.Api.Simulation.Lobster.Services;
 using Valkyrie.Core.Configuration;
 using Valkyrie.Instrument.Configuration;
+using Valkyrie.Instruments;
 using Valkyrie.Logging;
 using Valkyrie.Logging.Configuration;
 using Valkyrie.MatchingEngine;

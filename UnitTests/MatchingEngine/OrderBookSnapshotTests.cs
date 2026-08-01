@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using Instruments;
+using Valkyrie.Instrument;
 using Valkyrie.MatchingEngine;
 using Valkyrie.MatchingEngine.Algorithms;
 using Valkyrie.Orders;

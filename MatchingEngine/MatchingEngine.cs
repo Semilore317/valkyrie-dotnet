@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices.ComTypes;
-using Instruments;
+using Valkyrie.Instruments;
 using Valkyrie.MatchingEngine.Algorithms;
 using Valkyrie.OrderBook;
 using Valkyrie.Orders;
