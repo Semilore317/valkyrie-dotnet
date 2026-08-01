@@ -32,7 +32,7 @@ public sealed class CsvLobsterInputProvider(
 
         var orderBookPath = FindSingleFile(directory, orderBookSuffix);
 
-        ValidateMatchingDataset(messagePath, messageSuffix, orderBookPath, orderBookSuffix);
+        ValidateMatchingDataset(instrument, messagePath, messageSuffix, orderBookPath, orderBookSuffix);
 
         var messageReader = OpenReader(messagePath);
 
@@ -90,6 +90,7 @@ public sealed class CsvLobsterInputProvider(
     }
 
     private static void ValidateMatchingDataset(
+        HistoricalReplayInstrument instrument,
         string messagePath,
         string messageSuffix,
         string orderBookPath,
@@ -107,6 +108,8 @@ public sealed class CsvLobsterInputProvider(
                 "The message and order-book files do not " +
                 "belong to the same LOBSTER dataset"
             );
+        
+        LobsterDatasetIdentityValidator.Validate(instrument, messagePrefix);
     }
 
     private static StreamReader OpenReader(string path)

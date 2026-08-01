@@ -39,7 +39,7 @@ public sealed class ZipLobsterInputProviderTests
     public void Open_RejectsMissingRequiredEntry(bool messageIsMissing)
     {
         using var directory = new TemporaryDirectory();
-        
+
         string existingEntry;
         string existingContents;
         string missingSuffix;
@@ -56,8 +56,8 @@ public sealed class ZipLobsterInputProviderTests
             existingContents = "message-row";
             missingSuffix = "_orderbook_10.csv";
         }
-        
-        directory.CreateArchive("sample.zip",(existingEntry, existingContents));
+
+        directory.CreateArchive("sample.zip", (existingEntry, existingContents));
 
         var provider = CreateProvider(directory.DirectoryPath);
 
@@ -65,7 +65,7 @@ public sealed class ZipLobsterInputProviderTests
         {
             using var input = provider.Open(CreateInstrument());
         };
-        
+
         open.Should()
             .Throw<InvalidDataException>()
             .WithMessage($"*{missingSuffix}*");
@@ -77,12 +77,12 @@ public sealed class ZipLobsterInputProviderTests
         using var directory = new TemporaryDirectory();
 
         const string mismatchedOrderBookEntry = "data/MSFT_2012-06-21_34200000_57600000_orderbook_10.csv";
-        
+
         directory.CreateArchive(
             "sample.zip",
             (MessageEntryName, "message-row"),
             (mismatchedOrderBookEntry, "orderbook-entry"));
-        
+
         var provider = CreateProvider(directory.DirectoryPath);
 
         Action open = () =>
@@ -93,6 +93,41 @@ public sealed class ZipLobsterInputProviderTests
         open.Should()
             .Throw<InvalidDataException>()
             .WithMessage("*same LOBSTER dataset*");
+    }
+
+    [Theory]
+    [InlineData("MSFT", 2012, 6, 21)]
+    [InlineData("AAPL", 2012, 6, 22)]
+    public void Open_RejectsDatasetThatDoesNotMatchConfiguredInstrument(
+        string configuredSymbol,
+        int year,
+        int month,
+        int day
+    )
+    {
+        using var directory = new TemporaryDirectory();
+        directory.CreateArchive(
+            "sample.zip",
+            (MessageEntryName, "message-row"),
+            (OrderBookEntryName, "orderbook-row")
+            );
+        
+        var provider = CreateProvider(directory.DirectoryPath);
+        var instrument = CreateInstrument();
+
+        instrument.Symbol = configuredSymbol;
+        instrument.SessionMidnight = new DateTimeOffset(
+            year, month, day, 0, 0, 0, TimeSpan.FromHours(-4));
+
+        Action open = () =>
+        {
+            using var input = provider.Open(instrument);
+        };
+        
+        open.Should()
+            .Throw<InvalidDataException>()
+        .WithMessage($"*does not match configured symbol*session date*");
+
     }
 
     private static ZipLobsterInputProvider CreateProvider(string contentRoot)

@@ -13,15 +13,45 @@ public sealed class CsvLobsterInputProviderTests
     public void Open_ReturnsBothReaders()
     {
         using var directory = new TemporaryDirectory();
-        
-        directory.Write("AAPL_2012-06-12_34200000_57600000_message_10.csv", "message-row");
-        directory.Write("AAPL_2012-06-12_34200000_57600000_orderbook_10.csv", "orderbook-row");
-       
+
+        directory.Write("AAPL_2012-06-21_34200000_57600000_message_10.csv", "message-row");
+        directory.Write("AAPL_2012-06-21_34200000_57600000_orderbook_10.csv", "orderbook-row");
+
         var provider = CreateProvider(directory.DirectoryPath);
         using var input = provider.Open(CreateInstrument());
-        
+
         input.MessageReader.ReadLine().Should().Be("message-row");
         input.OrderBookReader.ReadLine().Should().Be("orderbook-row");
+    }
+
+    [Theory]
+    [InlineData("MSFT", 2012, 6, 21)]
+    [InlineData("AAPL", 2012, 6, 22)]
+    public void Open_RejectsDatasetThatDoesNotMatchConfiguredInstrument(
+        string instrumentName,
+        int year,
+        int month,
+        int day)
+    {
+        using var directory = new TemporaryDirectory();
+        
+        directory.Write("AAPL_2012-06-21_34200000_57600000_message_10.csv", "message-row");
+        directory.Write("AAPL_2012-06-21_34200000_57600000_orderbook_10.csv", "orderbook-row");
+        
+        var provider = CreateProvider(directory.DirectoryPath);
+        var instrument = CreateInstrument();
+
+        instrument.Symbol = instrumentName;
+        instrument.SessionMidnight = new DateTimeOffset(
+            year, month, day, 0, 0, 0, TimeSpan.FromHours(-4));
+        
+        Action open = () =>
+        {
+            using var input = provider.Open(instrument);
+        };
+        open.Should()
+            .Throw<InvalidDataException>()
+            .WithMessage("*does not match configured symbol*session date*");
     }
 
     private sealed class TestHostEnvironment(string contentRoot) : IHostEnvironment
@@ -48,11 +78,11 @@ public sealed class CsvLobsterInputProviderTests
 
         public void Dispose()
         {
-            if(Directory.Exists(DirectoryPath))
-                Directory.Delete(DirectoryPath,recursive: true);
+            if (Directory.Exists(DirectoryPath))
+                Directory.Delete(DirectoryPath, recursive: true);
         }
     }
-    
+
     private static CsvLobsterInputProvider CreateProvider(string contentRoot)
     {
         return new CsvLobsterInputProvider(new TestHostEnvironment(contentRoot));
