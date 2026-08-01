@@ -16,20 +16,33 @@ using Valkyrie.MatchingEngine;
 using Valkyrie.MatchingEngine.Algorithms;
 using Valkyrie.MatchingEngine.Configuration;
 
-static void InitializeOrderBooks(IHost app)
+static InstrumentCatalogue BuildInstrumentCatalogue(
+    IConfiguration configuration)
 {
-    var engine = app.Services.GetRequiredService<IMatchingEngine>();
-    var config = app.Services.GetRequiredService<IConfiguration>();
-    var instruments = config.GetSection("Instruments")
+    var configuredInstruments = configuration
+        .GetSection("Instruments")
         .Get<List<InstrumentConfiguration>>() ?? [];
 
-    foreach (var instrument in instruments)
-    {
-        engine.AddOrderBook(new Security(instrument.SecurityId, instrument.Symbol));
-    }
+    var instruments = configuredInstruments.Select(instrument => new Security(
+        instrument.SecurityId,
+        instrument.Ticker,
+        instrument.Name));
+
+    return new InstrumentCatalogue(instruments);
+}
+static void InitializeOrderBooks(IHost app)
+{
+    var engine = app.Services
+        .GetRequiredService<IMatchingEngine>();
+    var instrumentCatalog = app.Services
+        .GetRequiredService<InstrumentCatalogue>();
+
+    foreach (var instrument in instrumentCatalog.Instruments)
+        engine.AddOrderBook(instrument);
 }
 
 var builder = WebApplication.CreateBuilder(args);
+var instrumentCatalogue = BuildInstrumentCatalogue(builder.Configuration);
 
 // configurations reading from appsettings.json
 builder.Services.Configure<MarketSimulatorConfiguration>(
@@ -42,6 +55,7 @@ builder.Services.Configure<MatchingEngineConfiguration>(
     builder.Configuration.GetSection(nameof(MatchingEngineConfiguration)));
 
 // core domain & services
+builder.Services.AddSingleton<InstrumentCatalogue>(instrumentCatalogue);
 builder.Services.AddSingleton<ITextLogger, TextLogger>();
 builder.Services.AddSingleton<IMatchingAlgorithm>(sp =>
 {
@@ -75,7 +89,7 @@ builder.Services.AddSingleton<LobsterReplayMarketSource>();
 builder.Services.AddSingleton<LobsterReplayReader>();
 
 builder.Services.AddSingleton<IMarketDataSource>(
-    services => 
+    services =>
     {
         var configuration = services
         .GetRequiredService<IOptions<MarketSimulatorConfiguration>>()
@@ -99,6 +113,7 @@ InitializeOrderBooks(app);
 
 // endpoints
 app.UseWebSockets(); // turns on the 101 middleware
+app.MapInstrumentEndpoints();
 app.MapOrderEndpoints();
 app.MapExecutionEndpoints();
 app.MapMarketDataEndpoints(); // registers /ws/marketdata
