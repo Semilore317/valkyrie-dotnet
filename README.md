@@ -222,7 +222,7 @@ dotnet run --project .\Valkyrie --launch-profile historical-replay
 
 The checked-in profile enables the simulator and selects `LobsterReplay` as its market-data source.
 
-The default configuration replays the 2012-06-21 session at 60x speed, publishes at most five book snapshots per second per instrument, and stops after one pass. Restart the backend to replay it again.
+The default configuration replays the 2012-06-21 session at 1x speed, publishes at most five book snapshots per second per instrument, and stops after one pass. Restart the backend to replay it again.
 
 ### 4. Start the Angular dashboard
 
@@ -313,7 +313,7 @@ The default configuration uses LOBSTER's official depth-10 sample files for MSFT
 
 LOBSTER data is not mirrored or redistributed by this repository. Access and use remain subject to the data provider's applicable terms.
 
-Create a directory named `ReplayData` at the repository root, then save each archive at the path shown:
+ZIP streaming is the checked-in default and requires no extraction. Create a directory named `ReplayData` at the repository root, then save each archive at the path shown:
 
 | Ticker | Official depth-10 sample | Required local path |
 |---|---|---|
@@ -350,10 +350,38 @@ The application rejects:
 
 `DataFormat` supports:
 
-- `ZipArchive`: streams the paired CSV files directly from one ZIP archive without extracting it.
-- `CsvDirectory`: streams one matching pair from the configured directory.
+- `ZipArchive`: streams the paired CSV files directly from one ZIP archive without extracting it. This is the default and recommended setup.
+- `CsvDirectory`: streams one matching pair from an extracted directory.
 
 Relative `DataPath` values are resolved from the `Valkyrie` content root. The checked-in `../ReplayData/...` paths therefore refer to the repository-level `ReplayData/` directory.
+
+#### Using extracted CSV files
+
+Extract each archive into its own ticker-specific directory. Do not place all five message/order-book pairs directly in the shared `ReplayData` directory: the CSV provider requires exactly one matching pair in each configured directory and rejects duplicate matches.
+
+For example:
+
+```text
+ReplayData/
+`-- LOBSTER_SampleFile_MSFT_2012-06-21_10/
+    |-- MSFT_2012-06-21_34200000_57600000_message_10.csv
+    `-- MSFT_2012-06-21_34200000_57600000_orderbook_10.csv
+```
+
+Then change that instrument's `DataFormat` and `DataPath`:
+
+```json
+{
+  "SecurityId": 1,
+  "Ticker": "MSFT",
+  "DataFormat": "CsvDirectory",
+  "DataPath": "../ReplayData/LOBSTER_SampleFile_MSFT_2012-06-21_10",
+  "SessionMidnight": "2012-06-21T00:00:00-04:00",
+  "BookDepth": 10
+}
+```
+
+Repeat this directory and configuration pattern for each ticker. The `historical-replay` launch profile does not change; it selects the replay source, while each instrument's `DataFormat` and `DataPath` select how its data is opened. No CSV conversion, file renaming, or cache generation is required.
 
 ### Replay behaviour
 
