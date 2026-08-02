@@ -48,6 +48,14 @@ export interface TradingSession{
 
 export type MarketMessage = BookMessage | TradeMessage | MarketTradeMessage;
 export type LiquidityRole = 'Maker' | 'Taker';
+export type MarketDataMode = 'manual' | 'synthetic' | 'historicalReplay';
+
+export interface MarketDataStatus {
+  mode: MarketDataMode;
+  liquidity: 'executable' | 'observational';
+  orderEntryEnabled: boolean;
+  playbackSpeed: number | null;
+}
 
 export interface PlaceOrderRequest{
   sessionId: string;

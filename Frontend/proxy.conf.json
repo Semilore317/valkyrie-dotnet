@@ -19,5 +19,9 @@
     "target": "ws://localhost:5000",
     "secure": false,
     "ws": true
+  },
+  "/market-data": {
+    "target": "http://localhost:5000",
+    "secure": false
   }
 }

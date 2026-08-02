@@ -111,7 +111,7 @@ public sealed class ZipLobsterInputProviderTests
             (MessageEntryName, "message-row"),
             (OrderBookEntryName, "orderbook-row")
             );
-        
+
         var provider = CreateProvider(directory.DirectoryPath);
         var instrument = CreateInstrument();
 
@@ -123,7 +123,7 @@ public sealed class ZipLobsterInputProviderTests
         {
             using var input = provider.Open(instrument);
         };
-        
+
         open.Should()
             .Throw<InvalidDataException>()
         .WithMessage($"*does not match configured ticker*session date*");

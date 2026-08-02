@@ -6,7 +6,8 @@ import {
   OrderAck,
   PlaceOrderRequest,
   TradingSession,
-  Instrument
+  Instrument,
+  MarketDataStatus
 } from './trading.models';
 
 @Injectable({providedIn: 'root'})
@@ -15,6 +16,10 @@ export class TradingApiService {
 
   getInstruments(): Observable<Instrument[]> {
     return this.http.get<Instrument[]>('/instruments');
+  }
+
+  getMarketDataStatus(): Observable<MarketDataStatus> {
+    return this.http.get<MarketDataStatus>('/market-data/status');
   }
 
   createSession(): Observable<TradingSession> {

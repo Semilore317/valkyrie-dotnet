@@ -26,7 +26,7 @@ public class ZipLobsterInputProvider(
 
         TextReader? messageReader = null;
         TextReader? orderBookReader = null;
-        
+
         try
         {
             var messageSuffix = $"_message_{instrument.BookDepth}.csv";
@@ -37,7 +37,7 @@ public class ZipLobsterInputProvider(
 
             messageReader = OpenReader(messageEntry);
             orderBookReader = OpenReader(orderBookEntry);
-            
+
             return new LobsterInput(messageReader, orderBookReader, archive);
         }
         catch
@@ -124,7 +124,7 @@ public class ZipLobsterInputProvider(
 
         if (!string.Equals(messagePrefix, orderBookPrefix, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("The message and order-book entries do not belong to the same LOBSTER dataset");
-        
+
         LobsterDatasetIdentityValidator.Validate(instrument, messagePrefix);
     }
 

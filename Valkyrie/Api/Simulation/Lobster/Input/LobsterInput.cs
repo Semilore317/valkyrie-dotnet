@@ -23,9 +23,9 @@ public class LobsterInput : IDisposable
     {
         if (_disposed)
             return;
-        
+
         _disposed = true;
-        
+
         try
         {
             MessageReader.Dispose();

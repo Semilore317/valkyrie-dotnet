@@ -99,7 +99,7 @@ public sealed class CsvLobsterInputProvider(
     {
         var messageName = Path.GetFileName(messagePath);
         var orderBookName = Path.GetFileName(orderBookPath);
-        
+
         var messagePrefix = messageName.Substring(0, messageName.Length - messageSuffix.Length);
         var orderBookPrefix = orderBookName.Substring(0, orderBookName.Length - orderBookSuffix.Length);
 
@@ -108,7 +108,7 @@ public sealed class CsvLobsterInputProvider(
                 "The message and order-book files do not " +
                 "belong to the same LOBSTER dataset"
             );
-        
+
         LobsterDatasetIdentityValidator.Validate(instrument, messagePrefix);
     }
 

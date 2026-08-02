@@ -3,7 +3,7 @@
 namespace Valkyrie.Api.Simulation.Lobster.Models;
 
 /// <summary>
-/// represents an immutable row from a LOBSTER message file 
+/// represents an immutable row from a LOBSTER message file
 /// </summary>
 public record LobsterMessage(
     decimal SecondsAfterMidnight,
@@ -60,7 +60,7 @@ public record LobsterMessage(
         catch (Exception exception) when (exception is FormatException or OverflowException)
         {
             throw new InvalidDataException(
-                $"Invalid numeric value at message row {lineNumber}. ", exception 
+                $"Invalid numeric value at message row {lineNumber}. ", exception
             );
         }
     }

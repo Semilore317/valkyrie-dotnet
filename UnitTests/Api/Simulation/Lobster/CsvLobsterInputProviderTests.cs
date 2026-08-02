@@ -34,17 +34,17 @@ public sealed class CsvLobsterInputProviderTests
         int day)
     {
         using var directory = new TemporaryDirectory();
-        
+
         directory.Write("AAPL_2012-06-21_34200000_57600000_message_10.csv", "message-row");
         directory.Write("AAPL_2012-06-21_34200000_57600000_orderbook_10.csv", "orderbook-row");
-        
+
         var provider = CreateProvider(directory.DirectoryPath);
         var instrument = CreateInstrument();
 
         instrument.Ticker = instrumentName;
         instrument.SessionMidnight = new DateTimeOffset(
             year, month, day, 0, 0, 0, TimeSpan.FromHours(-4));
-        
+
         Action open = () =>
         {
             using var input = provider.Open(instrument);

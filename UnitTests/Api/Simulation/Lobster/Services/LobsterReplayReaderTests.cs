@@ -98,7 +98,7 @@ public sealed class LobsterReplayReaderTests
 
         var assertion = await action.Should()
             .ThrowAsync<InvalidOperationException>();
-        
+
         assertion.WithMessage("*ZipArchive*");
     }
 
