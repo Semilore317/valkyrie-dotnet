@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using FluentAssertions;
@@ -50,13 +50,13 @@ public class OrderApiTests
             new PlaceOrderRequest(1, "lee", Side.Buy, 10000, 60));
 
         var ack = await response.Content.ReadFromJsonAsync<OrderAck>();
-        
+
         ack!.Matched.Should().BeTrue();
-        
+
         ack.Fills.Should().ContainSingle().Which.Quantity.Should().Be(60u);
-        
+
         var book = await client.GetFromJsonAsync<OrderBookSnapshot>($"/book/1");
-        
+
         book!.Asks.Should().ContainSingle().Which.Quantity.Should().Be(40);
     }
 
@@ -65,8 +65,8 @@ public class OrderApiTests
     {
         using var app = NewApp();
         using var client = app.CreateClient();
-        
-        var ack = await (await client.PostAsJsonAsync("/orders", 
+
+        var ack = await (await client.PostAsJsonAsync("/orders",
             new PlaceOrderRequest(1, "sam", Side.Sell, 10000, 100)))
             .Content.ReadFromJsonAsync<OrderAck>();
 
@@ -83,10 +83,10 @@ public class OrderApiTests
     {
         using var app = NewApp();
         using var client = app.CreateClient();
-        
-        var response = await client.PostAsync("/orders", 
+
+        var response = await client.PostAsync("/orders",
             new StringContent("Not Valid JSON", Encoding.UTF8, "application/json"));
-        
+
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

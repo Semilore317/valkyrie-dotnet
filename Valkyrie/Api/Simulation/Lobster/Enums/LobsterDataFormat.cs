@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Api.Simulation.Lobster.Enums;
+namespace Valkyrie.Api.Simulation.Lobster.Enums;
 
 public enum LobsterDataFormat
 {

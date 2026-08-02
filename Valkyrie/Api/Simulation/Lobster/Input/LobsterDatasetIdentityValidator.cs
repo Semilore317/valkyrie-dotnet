@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Valkyrie.Core.Configuration;
 
 namespace Valkyrie.Api.Simulation.Lobster.Input;
@@ -28,8 +28,8 @@ internal class LobsterDatasetIdentityValidator
             return;
 
         throw new InvalidDataException(
-            $"LOBSTER dataset '{datasetPrefix}' does not match "+
-            $"configured ticker '{instrument.Ticker}' and "+
+            $"LOBSTER dataset '{datasetPrefix}' does not match " +
+            $"configured ticker '{instrument.Ticker}' and " +
             $"session date '{sessionDate}'."
         );
     }

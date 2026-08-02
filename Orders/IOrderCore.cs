@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Orders;
+namespace Valkyrie.Orders;
 
 public interface IOrderCore
 {

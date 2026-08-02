@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,24 +16,24 @@ public class MarketDataTests
     {
         public List<TradeEvent> Trades { get; } = new();
         public List<OrderBookSnapshot> BookSnapshots { get; } = new();
-        public List<MarketTradeEvent>  MarketTrades  {get;} = [];
+        public List<MarketTradeEvent> MarketTrades { get; } = [];
         public void PublishTrade(TradeEvent trade) => Trades.Add(trade);
         public void PublishBook(OrderBookSnapshot bookSnapshot) => BookSnapshots.Add(bookSnapshot);
         public void PublishMarketTrade(MarketTradeEvent marketTradeEvent) => MarketTrades.Add(marketTradeEvent);
     }
 
-    private static (WebApplicationFactory<Program>, CapturingPublisher ) NewApp()
-        {
-            var publisher = new CapturingPublisher();
-            var app = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-                builder.ConfigureServices(service =>
-                {
-                    service.RemoveAll<IMarketDataPublisher>();
-                    service.AddSingleton<IMarketDataPublisher>(publisher);
-                }));
+    private static (WebApplicationFactory<Program>, CapturingPublisher) NewApp()
+    {
+        var publisher = new CapturingPublisher();
+        var app = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+            builder.ConfigureServices(service =>
+            {
+                service.RemoveAll<IMarketDataPublisher>();
+                service.AddSingleton<IMarketDataPublisher>(publisher);
+            }));
 
-            return (app, publisher);
-        }
+        return (app, publisher);
+    }
 
     [Fact]
     public async Task Resting_Order_Publishes_Book_But_No_Trade()
@@ -47,9 +47,9 @@ public class MarketDataTests
         using var client = app.CreateClient();
 
         await client.PostAsJsonAsync(
-            "/orders", 
+            "/orders",
             new PlaceOrderRequest(1, "sam", Side.Sell, 10000, 100));
-        
+
         publisher.Trades.Should().BeEmpty();
         publisher.BookSnapshots.Should().ContainSingle().Which.SecurityId.Should().Be(1);
     }
@@ -61,9 +61,9 @@ public class MarketDataTests
 
         using var _app = app;
         using var client = app.CreateClient();
-        
+
         await client.PostAsJsonAsync(
-            "/orders", 
+            "/orders",
             new PlaceOrderRequest(1, "sam", Side.Sell, 10000, 100));
         await client.PostAsJsonAsync(
             "/orders",

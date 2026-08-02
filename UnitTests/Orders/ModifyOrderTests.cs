@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Valkyrie.Orders;
 
 namespace UnitTests;
@@ -15,10 +15,10 @@ public class ModifyOrderTests
     {
         // arrange
         var modifyOrder = new ModifyOrder(99, 1, "Optiver", Side.Buy, 200, 500);
-        
+
         // act
         var cancelOrder = modifyOrder.ToCancelOrder();
-        
+
         // assert
         cancelOrder.OrderId.Should().Be(modifyOrder.OrderId);
         cancelOrder.SecurityId.Should().Be(modifyOrder.SecurityId);
@@ -29,11 +29,11 @@ public class ModifyOrderTests
     public void ToNewOrder_ShouldCreateOrderWithModifiedValuesCorrectly()
     {
         // arrange
-        var modifyOrder = new ModifyOrder(67, 89, "Jump Trading",  Side.Buy, 200, 250);
+        var modifyOrder = new ModifyOrder(67, 89, "Jump Trading", Side.Buy, 200, 250);
 
         // act
-        var  newOrder = modifyOrder.ToNewOrder();
-        
+        var newOrder = modifyOrder.ToNewOrder();
+
         // assert
         newOrder.OrderId.Should().Be(modifyOrder.OrderId);
         newOrder.SecurityId.Should().Be(modifyOrder.SecurityId);

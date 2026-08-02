@@ -1,4 +1,4 @@
-﻿using Valkyrie.Api.Simulation.Lobster;
+using Valkyrie.Api.Simulation.Lobster;
 using Valkyrie.Api.Simulation.Lobster.Enums;
 
 namespace Valkyrie.Core.Configuration;

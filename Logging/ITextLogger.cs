@@ -1,6 +1,6 @@
-﻿namespace Valkyrie.Logging;
+namespace Valkyrie.Logging;
 
-public interface ITextLogger: ILogger, IDisposable
+public interface ITextLogger : ILogger, IDisposable
 {
-    
+
 }

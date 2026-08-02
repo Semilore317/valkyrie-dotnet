@@ -1,4 +1,4 @@
-﻿using Valkyrie.Api.Dto;
+using Valkyrie.Api.Dto;
 
 namespace Valkyrie.Api;
 

@@ -1,4 +1,4 @@
-﻿using Valkyrie.MatchingEngine;
+using Valkyrie.MatchingEngine;
 
 namespace Valkyrie.Api.Simulation.Lobster.Models;
 

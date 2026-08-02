@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Instruments;
+namespace Valkyrie.Instruments;
 
 public class Security(
     long securityId,

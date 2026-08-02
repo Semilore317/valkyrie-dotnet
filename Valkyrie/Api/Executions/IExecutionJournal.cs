@@ -1,4 +1,4 @@
-﻿using Valkyrie.MatchingEngine;
+using Valkyrie.MatchingEngine;
 using Valkyrie.Orders;
 
 namespace Valkyrie.Api.Executions;

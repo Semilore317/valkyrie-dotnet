@@ -1,4 +1,4 @@
-﻿using System.IO.Compression;
+using System.IO.Compression;
 using Valkyrie.Api.Simulation.Lobster.Enums;
 using Valkyrie.Core.Configuration;
 

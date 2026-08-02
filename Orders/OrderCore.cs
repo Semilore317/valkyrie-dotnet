@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Orders;
+namespace Valkyrie.Orders;
 
 public class OrderCore(long orderId, long securityId, string username) : IOrderCore
 {

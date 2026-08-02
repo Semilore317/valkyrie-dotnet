@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Instrument.Configuration;
+namespace Valkyrie.Instrument.Configuration;
 
 public class InstrumentConfiguration
 {

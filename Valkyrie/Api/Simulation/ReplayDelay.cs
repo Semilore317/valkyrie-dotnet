@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Api.Simulation;
+namespace Valkyrie.Api.Simulation;
 
 public interface IReplayDelay
 {

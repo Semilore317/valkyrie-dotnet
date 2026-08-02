@@ -1,10 +1,10 @@
-.execution-heading-actions{
+.execution-heading-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.refresh-executions{
+.refresh-executions {
   border: 1px solid var(--line);
   background: transparent;
   color: var(--muted);
@@ -15,23 +15,23 @@
   cursor: pointer;
 }
 
-.refresh-executions:hover{
+.refresh-executions:hover {
   color: var(--text);
   border-color: var(--accent);
 }
 
-.refresh-executions:disabled{
+.refresh-executions:disabled {
   cursor: wait;
   opacity: 0.5;
 }
 
-.execution-summary{
+.execution-summary {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   border-bottom: 1px solid var(--line);
 }
 
-.execution-summary > div{
+.execution-summary > div {
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -39,39 +39,39 @@
   border-right: 1px solid var(--line);
 }
 
-.execution-summary > div:last-child{
+.execution-summary > div:last-child {
   border-right: 0;
 }
 
-.execution-summary .label{
+.execution-summary .label {
   color: var(--muted);
   font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.execution-summary strong{
+.execution-summary strong {
   font-size: 13px;
 }
 
-.executions-panel{
+.executions-panel {
   grid-column: 1 / -1;
   width: 100%;
   min-width: 0;
 }
 
-.executions-panel .phead{
+.executions-panel .phead {
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--bg-2);
 }
 
-.buy-value{
+.buy-value {
   color: var(--green);
 }
 
-.sell-value{
+.sell-value {
   color: var(--red);
 }
 
@@ -110,14 +110,14 @@
 }
 
 .execution-head,
-.execution-row{
+.execution-row {
   display: grid;
   grid-template-columns: minmax(105px, 1.5fr) 0.7fr 1fr 0.8fr 0.8fr 0.8fr;
   align-items: center;
   column-gap: 12px;
 }
 
-.execution-head{
+.execution-head {
   padding: 8px 12px;
   color: var(--muted);
   border-bottom: 1px solid var(--line);
@@ -126,12 +126,12 @@
   text-transform: uppercase;
 }
 
-.execution-list{
+.execution-list {
   max-height: 240px;
   overflow-y: auto;
 }
 
-.execution-row{
+.execution-row {
   min-height: 34px;
   padding: 0 12px;
   border-bottom: 1px solid var(--line-soft, var(--line));
@@ -139,42 +139,42 @@
   font-size: 11px;
 }
 
-.execution-row:last-child{
+.execution-row:last-child {
   border-bottom: 0;
 }
 
 .execution-row.buy .execution-side,
-.execution-row.buy .execution-price{
+.execution-row.buy .execution-price {
   color: var(--green);
 }
 
 .execution-row.sell .execution-side,
-.execution-row.sell .execution-price{
+.execution-row.sell .execution-price {
   color: var(--red);
 }
 
 .execution-side,
-.execution-role{
+.execution-role {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-@media(max-width: 900px){
-  .execution-summary{
+@media (max-width: 900px) {
+  .execution-summary {
     grid-template-columns: repeat(3, 1fr);
   }
 
   .execution-head,
-  .execution-row{
+  .execution-row {
     grid-template-columns: minmax(90px, 1.4fr) 0.7fr 1fr 0.7fr;
   }
 
   .execution-head span:nth-child(5),
   .execution-head span:nth-child(6),
   .execution-row span:nth-child(5),
-  .execution-row span:nth-child(6){
+  .execution-row span:nth-child(6) {
     display: none;
   }
 }

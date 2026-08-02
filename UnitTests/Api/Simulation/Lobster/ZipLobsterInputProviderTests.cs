@@ -1,4 +1,4 @@
-﻿using System.IO.Compression;
+using System.IO.Compression;
 using FluentAssertions;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
@@ -171,8 +171,8 @@ public sealed class ZipLobsterInputProviderTests
         public void CreateArchive(
             string fileName,
             params (string EntryName, string Contents)[] entries
-            //params allows you to pass a comma-separated list of values into the method instead of
-            //making an array manually.
+        //params allows you to pass a comma-separated list of values into the method instead of
+        //making an array manually.
         )
         {
             var archivePath = Path.Combine(DirectoryPath, fileName);

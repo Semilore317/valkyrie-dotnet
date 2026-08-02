@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Orders;
+namespace Valkyrie.Orders;
 
 public class ModifyOrder(
         long orderId,
@@ -7,7 +7,7 @@ public class ModifyOrder(
         Side side,
         long price,
         uint quantity
-    ): IOrderCore
+    ) : IOrderCore
 {
     public long OrderId { get; } = orderId;
     public long SecurityId { get; } = securityId;
@@ -16,8 +16,8 @@ public class ModifyOrder(
     public long Price { get; } = price;
     public uint Quantity { get; } = quantity;
     public Side Side { get; } = side;
-    
-    
+
+
     public bool IsBuySide => Side == Side.Buy;
 
     public Order ToNewOrder() => new Order(
@@ -28,11 +28,11 @@ public class ModifyOrder(
         Price,
         Quantity
     );
-    
-    
+
+
     public CancelOrder ToCancelOrder() => new CancelOrder(
-        OrderId, 
-        SecurityId, 
+        OrderId,
+        SecurityId,
         Username
     );
 }

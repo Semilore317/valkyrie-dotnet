@@ -1,4 +1,4 @@
-﻿using Valkyrie.Orders;
+using Valkyrie.Orders;
 
 namespace Valkyrie.MatchingEngine.Algorithms;
 
@@ -9,7 +9,7 @@ public interface IMatchingAlgorithm
 {
     MatchResult MatchIncoming(
         Order incoming,
-        SortedSet<Limit> bidLimits, 
+        SortedSet<Limit> bidLimits,
         SortedSet<Limit> askLimits,
         Dictionary<long, OrderbookEntry> orders);
 }

@@ -106,11 +106,11 @@ public sealed class LobsterReplayReaderTests
     public async Task ReadAsync_RejectsBackwardsTimestamp()
     {
         var provider = new StubInputProvider(
-            messageRows:[
+            messageRows: [
                 "34200.25,1,1001,50,100100,1",
                 "34200,4,1001,20,100200,-1"
             ],
-            orderbookRows:[
+            orderbookRows: [
                 "100200,100,100100,200,"+ "100300,300,100000,400",
                 "100300,90,100200,180," + "100400,270,100100,360"
             ]

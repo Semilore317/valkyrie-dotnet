@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Valkyrie.Orders;
 
 namespace UnitTests;
@@ -56,7 +56,7 @@ public class LimitTests
         // Assert
         orderQuantity.Should().Be(1300u);
     }
-    
+
     /// <summary>
     /// This test verifies that the order book correctly extract the
     /// L3 snapshot records for external systems, specifically tracking their positions in queue.
@@ -65,35 +65,35 @@ public class LimitTests
     public void GetLevelOrderRecords_ShouldReturnCorrectRecords()
     {
         // Arrange
-        var limit  = new Limit(1500);
+        var limit = new Limit(1500);
         var order1 = new Order(1, 1, "JUMP TRADING", Side.Buy, 1500, 100);
         var order2 = new Order(2, 2, "TWO SIGMA", Side.Buy, 1500, 1200);
-        
+
         var entry1 = new OrderbookEntry(order1, limit);
         var entry2 = new OrderbookEntry(order2, limit);
-        
+
         entry1.Next = entry2;
         entry2.Previous = entry1;
-        
+
         limit.Head = entry1;
         limit.Tail = entry2;
-        
+
         // Act
         var records = limit.GetLevelOrderRecords();
-        
+
         // Assert
-        
+
         // count check
         records.Count.Should().Be(2);
-        
+
         // position checks
         records[0].TheoreticalQueuePosition.Should().Be(0u);
         records[1].TheoreticalQueuePosition.Should().Be(1u);
-        
+
         //property checks
         records[0].OrderId.Should().Be(1u);
         records[1].OrderId.Should().Be(2u);
-        
+
         records[0].Quantity.Should().Be(100u);
         records[1].Quantity.Should().Be(1200u);
 
@@ -118,15 +118,15 @@ public class LimitTests
         var limit = new Limit(1500);
         var order = new Order(1, 1, "JUMP TRADING", Side.Buy, 1500, 100);
         var entry = new OrderbookEntry(order, limit);
-        
+
         limit.Head = entry;
         limit.Tail = entry;
-        
+
         limit.IsEmpty.Should().BeFalse();
 
         limit.Head = null;
         limit.Tail = null;
-        
+
         limit.IsEmpty.Should().BeTrue();
     }
 }

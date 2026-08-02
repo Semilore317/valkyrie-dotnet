@@ -4,16 +4,16 @@ using Valkyrie.Instruments;
 using Valkyrie.Orders;
 
 // grants private fields access without compromising encapsulation
-[assembly: InternalsVisibleTo("MatchingEngine")] 
+[assembly: InternalsVisibleTo("MatchingEngine")]
 namespace Valkyrie.OrderBook;
 
 public class OrderBook : IRetrievalOrderBook
 {
     private readonly Security _instrument;
-    
+
     // orders keyed by order-id
     private readonly Dictionary<long, OrderbookEntry> _orders = new Dictionary<long, OrderbookEntry>();
-    
+
     // SortedSets of Limit price levels
     private readonly SortedSet<Limit> _askLimits = new SortedSet<Limit>(AskLimitComparer.Comparer);
     private readonly SortedSet<Limit> _bidLimits = new SortedSet<Limit>(BidLimitComparer.Comparer);
@@ -27,7 +27,7 @@ public class OrderBook : IRetrievalOrderBook
     {
         _instrument = instrument;
     }
-    
+
     public bool ContainsOrder(long orderId)
     {
         return _orders.ContainsKey(orderId);
@@ -37,7 +37,7 @@ public class OrderBook : IRetrievalOrderBook
     {
         long? bestAsk = null;
         long? bestBid = null;
-        
+
         // AskLimits are sorted ascending (Min is the best ask price level)
         if (_askLimits.Any() && _askLimits.Min != null && !_askLimits.Min.IsEmpty)
         {
@@ -53,7 +53,7 @@ public class OrderBook : IRetrievalOrderBook
         return new OrderBookSpread(bestBid, bestAsk);
     }
 
-    public int Count  => _orders.Count;
+    public int Count => _orders.Count;
 
     public List<OrderbookEntry> GetAskOrders()
     {
@@ -95,7 +95,7 @@ public class OrderBook : IRetrievalOrderBook
     {
         var baseLimit = new Limit(order.Price);
         AddOrder(
-            order, 
+            order,
             baseLimit,
             order.IsBuySide ? _bidLimits : _askLimits,
             _orders
@@ -114,7 +114,7 @@ public class OrderBook : IRetrievalOrderBook
             OrderbookEntry orderbookEntry = new OrderbookEntry(order, limit);
             if (limit.Head == null)
             {
-                limit.Head = orderbookEntry; 
+                limit.Head = orderbookEntry;
                 limit.Tail = orderbookEntry;
             }
             else
@@ -134,20 +134,20 @@ public class OrderBook : IRetrievalOrderBook
             limitLevels.Add(baseLimit);
             // FIXED: Associate the entry with 'baseLimit' (which is now in the set), not the null 'limit'
             OrderbookEntry orderbookEntry = new OrderbookEntry(order, baseLimit);
-            
+
             baseLimit.Head = orderbookEntry;
             baseLimit.Tail = orderbookEntry;
-            
+
             internalOrderBook.Add(order.OrderId, orderbookEntry);
-        } 
+        }
     }
 
     public void ChangeOrder(ModifyOrder modifyOrder)
     {
-        if (_orders.TryGetValue(modifyOrder.OrderId, out OrderbookEntry? orderbookEntry)) 
+        if (_orders.TryGetValue(modifyOrder.OrderId, out OrderbookEntry? orderbookEntry))
         {
-           RemoveOrder(modifyOrder.ToCancelOrder());
-           AddOrder(modifyOrder.ToNewOrder());
+            RemoveOrder(modifyOrder.ToCancelOrder());
+            AddOrder(modifyOrder.ToNewOrder());
         }
     }
 
@@ -180,7 +180,7 @@ public class OrderBook : IRetrievalOrderBook
         {
             orderbookEntry.Next.Previous = null;
         }
-        
+
         // Adjust Head / Tail pointers of the containing Limit level
         if (orderbookEntry.ParentLimit.Head == orderbookEntry && orderbookEntry.ParentLimit.Tail == orderbookEntry)
         {

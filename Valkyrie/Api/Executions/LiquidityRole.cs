@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Api.Executions;
+namespace Valkyrie.Api.Executions;
 
 public enum LiquidityRole
 {

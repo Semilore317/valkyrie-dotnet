@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Orders;
+namespace Valkyrie.Orders;
 
 public class CancelOrder(
       long orderId,
@@ -7,5 +7,5 @@ public class CancelOrder(
    )
    : OrderCore(orderId, securityId, username)
 {
-    
+
 }

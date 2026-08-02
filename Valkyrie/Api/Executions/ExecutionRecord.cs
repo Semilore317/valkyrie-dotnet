@@ -1,4 +1,4 @@
-﻿using Valkyrie.Orders;
+using Valkyrie.Orders;
 
 namespace Valkyrie.Api.Executions;
 
@@ -18,5 +18,5 @@ public record ExecutionRecord(
     long Price,
     uint Quantity,
     DateTime ExecutedAt,
-    LiquidityRole LiquidityRole 
+    LiquidityRole LiquidityRole
 );

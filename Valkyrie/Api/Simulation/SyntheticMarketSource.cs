@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using Valkyrie.Api.Dto;
 using Valkyrie.Core.Configuration;
 using Valkyrie.Logging;
@@ -49,8 +49,8 @@ public class SyntheticMarketSource(
                 price,
                 quantity
             ));
-        
-        if(HasRestingRemainder(ack, side, quantity))
+
+        if (HasRestingRemainder(ack, side, quantity))
             resting.Add((ack.OrderId, side));
     }
 
@@ -222,7 +222,7 @@ public class SyntheticMarketSource(
             if (HasRestingRemainder(bid, Side.Buy, quantity))
                 resting.Add((bid.OrderId, Side.Buy));
 
-            if (HasRestingRemainder(ask, Side.Sell,  quantity))
+            if (HasRestingRemainder(ask, Side.Sell, quantity))
                 resting.Add((ask.OrderId, Side.Sell));
         }
     }

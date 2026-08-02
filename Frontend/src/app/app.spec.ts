@@ -1,44 +1,48 @@
-import {TestBed} from '@angular/core/testing';
-import {of} from 'rxjs';
-import {vi} from 'vitest';
-import {App} from './app';
-import {MarketDataService} from './MarketData.service';
-import {TradingApiService} from './TradingApi.service';
-import {Instrument, MarketDataStatus, MarketMessage} from './trading.models';
+import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
+import { App } from './app';
+import { MarketDataService } from './MarketData.service';
+import { TradingApiService } from './TradingApi.service';
+import { Instrument, MarketDataStatus, MarketMessage } from './trading.models';
 
 const executableStatus: MarketDataStatus = {
   mode: 'synthetic',
   liquidity: 'executable',
   orderEntryEnabled: true,
-  playbackSpeed: null
+  playbackSpeed: null,
 };
 
 const configuredInstruments: Instrument[] = [
-  {securityId: 1, ticker: 'MSFT', name: 'Microsoft Corporation'},
-  {securityId: 2, ticker: 'AAPL', name: 'Apple Inc.'},
-  {securityId: 3, ticker: 'AMZN', name: 'Amazon.com, Inc.'},
-  {securityId: 4, ticker: 'GOOG', name: 'Alphabet Inc.'},
-  {securityId: 5, ticker: 'INTC', name: 'Intel Corporation'}
-]
+  { securityId: 1, ticker: 'MSFT', name: 'Microsoft Corporation' },
+  { securityId: 2, ticker: 'AAPL', name: 'Apple Inc.' },
+  { securityId: 3, ticker: 'AMZN', name: 'Amazon.com, Inc.' },
+  { securityId: 4, ticker: 'GOOG', name: 'Alphabet Inc.' },
+  { securityId: 5, ticker: 'INTC', name: 'Intel Corporation' },
+];
 
 describe('App', () => {
   const marketData = {
-    connect: vi.fn<(
-      securityIds: number[],
-      onMessage: (message: MarketMessage) => void,
-      onStatus: (status: string) => void
-    ) => void>(),
-    disconnect: vi.fn()
+    connect:
+      vi.fn<
+        (
+          securityIds: number[],
+          onMessage: (message: MarketMessage) => void,
+          onStatus: (status: string) => void,
+        ) => void
+      >(),
+    disconnect: vi.fn(),
   };
-
 
   const tradingApi = {
     getMarketDataStatus: vi.fn(() => of(executableStatus)),
     getInstruments: vi.fn(() => of(configuredInstruments)),
-    createSession: vi.fn(() => of({
-      sessionId: 'test-session-id',
-      createdAt: '2026-07-25T00:00:00Z',
-    })),
+    createSession: vi.fn(() =>
+      of({
+        sessionId: 'test-session-id',
+        createdAt: '2026-07-25T00:00:00Z',
+      }),
+    ),
 
     getExecutions: vi.fn(() => of([])),
     placeOrder: vi.fn(),
@@ -51,18 +55,16 @@ describe('App', () => {
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
       writable: true,
-      value: vi.fn().mockImplementation(
-        (query: string) => ({
-          matches: false,
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })
-      ),
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
     });
 
     await TestBed.configureTestingModule({
@@ -95,12 +97,9 @@ describe('App', () => {
 
     fixture.detectChanges();
 
-    const element =
-      fixture.nativeElement as HTMLElement;
+    const element = fixture.nativeElement as HTMLElement;
 
-    expect(
-      element.querySelector('.word b')?.textContent
-    ).toContain('VALKYRIE');
+    expect(element.querySelector('.word b')?.textContent).toContain('VALKYRIE');
   });
 
   it('creates a trading session on first launch', () => {
@@ -108,13 +107,9 @@ describe('App', () => {
 
     fixture.detectChanges();
 
-    expect(
-      tradingApi.createSession
-    ).toHaveBeenCalledOnce();
+    expect(tradingApi.createSession).toHaveBeenCalledOnce();
 
-    expect(
-      fixture.componentInstance.sessionId()
-    ).toBe('test-session-id');
+    expect(fixture.componentInstance.sessionId()).toBe('test-session-id');
   });
 
   it('loads session executions after initialization', () => {
@@ -122,159 +117,117 @@ describe('App', () => {
 
     fixture.detectChanges();
 
-    expect(
-      tradingApi.getExecutions
-    ).toHaveBeenCalledWith('test-session-id');
+    expect(tradingApi.getExecutions).toHaveBeenCalledWith('test-session-id');
   });
 
   it('reuses a session after a browser refresh', () => {
-    sessionStorage.setItem(
-      'sessionId',
-      'existing-session-id'
-    );
+    sessionStorage.setItem('sessionId', 'existing-session-id');
 
     const fixture = TestBed.createComponent(App);
 
     fixture.detectChanges();
 
-    expect(
-      tradingApi.createSession
-    ).not.toHaveBeenCalled();
+    expect(tradingApi.createSession).not.toHaveBeenCalled();
 
-    expect(
-      tradingApi.getExecutions
-    ).toHaveBeenCalledWith(
-      'existing-session-id'
-    );
+    expect(tradingApi.getExecutions).toHaveBeenCalledWith('existing-session-id');
   });
 
-  it("loads configured instruments before subscribing",
-    () => {
-      const fixture = TestBed.createComponent(App);
+  it('loads configured instruments before subscribing', () => {
+    const fixture = TestBed.createComponent(App);
 
-      fixture.detectChanges();
+    fixture.detectChanges();
 
-      const component = fixture.componentInstance;
+    const component = fixture.componentInstance;
 
-      expect(tradingApi.getInstruments).toHaveBeenCalledOnce();
-      expect(component.instruments()).toEqual(configuredInstruments);
+    expect(tradingApi.getInstruments).toHaveBeenCalledOnce();
+    expect(component.instruments()).toEqual(configuredInstruments);
 
-      const [securityIds] = marketData.connect.mock.calls[0];
+    const [securityIds] = marketData.connect.mock.calls[0];
 
-      expect(securityIds).toEqual([1, 2, 3, 4, 5]);
+    expect(securityIds).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it('keeps historical market prints isolated by instrument', () => {
+    const fixture = TestBed.createComponent(App);
+
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+
+    const workingOrder = {
+      orderId: 91,
+      securityId: 2,
+      ticker: 'AAPL',
+      username: 'Jon Snow',
+      side: 'buy' as const,
+      price: 58_500,
+      quantity: 100,
+      filledQuantity: 0,
+    };
+
+    component.workingOrders.set([workingOrder]);
+
+    const [, onMessage] = marketData.connect.mock.calls[0];
+
+    const aaplPrint: MarketMessage = {
+      type: 'marketTrade',
+      securityId: 2,
+      price: 58_574.55,
+      quantity: 40,
+      occurredAt: '2012-06-21T09:30:00.2750161-04:00',
+      aggressorSide: 'buy',
+    };
+
+    // Identical prints must remain separate rows.
+    onMessage(aaplPrint);
+    onMessage(aaplPrint);
+
+    onMessage({
+      type: 'marketTrade',
+      securityId: 3,
+      price: 22_382,
+      quantity: 10,
+      occurredAt: '2012-06-21T09:30:01.0000000-04:00',
+      aggressorSide: 'sell',
     });
 
-  it(
-    'keeps historical market prints isolated by instrument',
-    () => {
-      const fixture =
-        TestBed.createComponent(App);
+    component.select(2);
 
-      fixture.detectChanges();
+    expect(component.tape()).toHaveLength(2);
 
-      const component =
-        fixture.componentInstance;
+    expect(component.tape().every((row) => row.securityId === 2)).toBe(true);
 
-      const workingOrder = {
-        orderId: 91,
-        securityId: 2,
-        ticker: 'AAPL',
-        username: 'Jon Snow',
-        side: 'buy' as const,
-        price: 58_500,
-        quantity: 100,
-        filledQuantity: 0
-      };
+    expect(new Set(component.tape().map((row) => row.id)).size).toBe(2);
 
-      component.workingOrders.set([
-        workingOrder
-      ]);
+    // Historical prints are observations,
+    // not fills of the user's local order.
+    expect(component.workingOrders()).toEqual([workingOrder]);
 
-      const [, onMessage] =
-        marketData.connect.mock.calls[0];
+    component.select(3);
 
-      const aaplPrint: MarketMessage = {
-        type: 'marketTrade',
-        securityId: 2,
-        price: 58_574.55,
-        quantity: 40,
-        occurredAt:
-          '2012-06-21T09:30:00.2750161-04:00',
-        aggressorSide: 'buy'
-      };
+    expect(component.tape()).toHaveLength(1);
 
-      // Identical prints must remain separate rows.
-      onMessage(aaplPrint);
-      onMessage(aaplPrint);
+    expect(component.tape()[0].securityId).toBe(3);
+  });
 
-      onMessage({
-        type: 'marketTrade',
-        securityId: 3,
-        price: 22_382,
-        quantity: 10,
-        occurredAt:
-          '2012-06-21T09:30:01.0000000-04:00',
-        aggressorSide: 'sell'
-      });
+  it('shows historical replay as view-only', () => {
+    const replayStatus: MarketDataStatus = {
+      mode: 'historicalReplay',
+      liquidity: 'observational',
+      orderEntryEnabled: false,
+      playbackSpeed: 1,
+    };
 
-      component.select(2);
+    tradingApi.getMarketDataStatus.mockReturnValueOnce(of(replayStatus));
 
-      expect(component.tape())
-        .toHaveLength(2);
+    const fixture = TestBed.createComponent(App);
 
-      expect(
-        component.tape().every(
-          row => row.securityId === 2
-        )
-      ).toBe(true);
+    fixture.detectChanges();
 
-      expect(
-        new Set(
-          component.tape().map(
-            row => row.id
-          )
-        ).size
-      ).toBe(2);
+    const element = fixture.nativeElement as HTMLElement;
 
-      // Historical prints are observations,
-      // not fills of the user's local order.
-      expect(component.workingOrders())
-        .toEqual([workingOrder]);
-
-      component.select(3);
-
-      expect(component.tape())
-        .toHaveLength(1);
-
-      expect(component.tape()[0].securityId)
-        .toBe(3);
-    }
-  );
-
-  it('shows historical replay as view-only',
-    () => {
-      const replayStatus: MarketDataStatus = {
-        mode: 'historicalReplay',
-        liquidity: 'observational',
-        orderEntryEnabled: false,
-        playbackSpeed: 1
-      };
-
-      tradingApi.getMarketDataStatus.mockReturnValueOnce(
-        of(replayStatus)
-      );
-
-      const fixture = TestBed.createComponent(App);
-
-      fixture.detectChanges();
-
-      const element = fixture.nativeElement as HTMLElement;
-
-      expect(element.textContent)
-        .toContain('HISTORICAL REPLAY · VIEW ONLY · 1x');
-      expect(element.querySelector('form.entry'))
-        .toBeNull();
-      expect(tradingApi.createSession)
-        .not.toHaveBeenCalled();
-    });
+    expect(element.textContent).toContain('HISTORICAL REPLAY · VIEW ONLY · 1x');
+    expect(element.querySelector('form.entry')).toBeNull();
+    expect(tradingApi.createSession).not.toHaveBeenCalled();
+  });
 });

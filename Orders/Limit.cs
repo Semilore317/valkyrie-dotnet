@@ -2,9 +2,9 @@ namespace Valkyrie.Orders;
 
 public class Limit
 {
-    
+
     // TODO: refactor this into a struct at some point for better performance
-    
+
     /*
     this is essentially the maximum they're willing to pay (bid)
     or the minimum they're willing to accept (ask)
@@ -15,13 +15,13 @@ public class Limit
     {
         Price = price;
     }
-    
+
     public long Price { get; }
     public OrderbookEntry? Head { get; set; }
     public OrderbookEntry? Tail { get; set; }
 
     public bool IsEmpty => Head == null;
-    
+
     public uint GetLevelOrderCount()
     {
         uint orderCount = 0;
@@ -37,7 +37,7 @@ public class Limit
             }
             entry = entry.Next;
         }
-        
+
         return orderCount;
     }
 
@@ -46,15 +46,15 @@ public class Limit
         uint orderQuantity = 0;
         if (IsEmpty)
             return orderQuantity;
-        
-        
+
+
         OrderbookEntry? entry = Head;
         while (entry != null)
         {
             orderQuantity += entry.CurrentQuantity;
             entry = entry.Next;
         }
-        
+
         return orderQuantity;
     }
 

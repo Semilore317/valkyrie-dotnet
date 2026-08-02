@@ -114,22 +114,22 @@ public class ProRata : IMatchingAlgorithm
     )
     {
         List<Fill> fills = new List<Fill>();
-        
-        SortedSet<Limit> restingLimits = incoming.IsBuySide ?  askLimits : bidLimits;
 
-        while (incoming.CurrentQuantity > 0 &&  restingLimits.Count > 0)
+        SortedSet<Limit> restingLimits = incoming.IsBuySide ? askLimits : bidLimits;
+
+        while (incoming.CurrentQuantity > 0 && restingLimits.Count > 0)
         {
             Limit bestLevel = restingLimits.Min!;
-            
+
             bool crosses = incoming.IsBuySide
-                ? incoming.Price  >= bestLevel.Price
-                : incoming.Price <=  bestLevel.Price;
+                ? incoming.Price >= bestLevel.Price
+                : incoming.Price <= bestLevel.Price;
 
             if (!crosses)
                 break;
-            
+
             long executionPrice = bestLevel.Price;
-            
+
             // allocate the incoming quantity across this level's resting order, by size
             List<(OrderbookEntry Entry, uint Allocated)> allocations =
                 AllocateProRata(bestLevel, incoming.CurrentQuantity);
@@ -137,12 +137,12 @@ public class ProRata : IMatchingAlgorithm
             foreach (var (restingEntry, allocated) in allocations)
             {
                 uint tradeQuantity = Math.Min(allocated, incoming.CurrentQuantity);
-                if(tradeQuantity == 0)
+                if (tradeQuantity == 0)
                     continue;
-                
+
                 incoming.DecrementQuantity(tradeQuantity);
                 restingEntry.DecrementQuantity(tradeQuantity);
-                
+
                 fills.Add(new Fill
                 {
                     SecurityId = incoming.SecurityId,
@@ -152,9 +152,9 @@ public class ProRata : IMatchingAlgorithm
                     FilledQuantity = tradeQuantity,
                     FilledAt = DateTime.UtcNow
                 });
-                
-                if(restingEntry.CurrentQuantity == 0)
-                    RemoveFilledOrder(restingEntry,  restingLimits, orders);
+
+                if (restingEntry.CurrentQuantity == 0)
+                    RemoveFilledOrder(restingEntry, restingLimits, orders);
             }
         }
         return new MatchResult(fills);

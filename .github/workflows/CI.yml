@@ -22,8 +22,10 @@ jobs:
 
       - name: Restore
         run: dotnet restore Valkyrie.slnx
-
-
+      
+      - name: Check .NET formatting
+        run: dotnet format Valkyrie.slnx whitespace --verify-no-changes --no-restore
+      
       - name: Build
         run: dotnet build Valkyrie.slnx --no-restore -c Release
 
@@ -47,7 +49,11 @@ jobs:
       - name: Install frontend dependencies
         working-directory: Frontend
         run: npm ci
-
+      
+      - name: Check frontent formatting
+        working-directory: Frontend
+        run: npm run format:check
+      
       - name: Build frontend
         working-directory: Frontend
         run: npm run build

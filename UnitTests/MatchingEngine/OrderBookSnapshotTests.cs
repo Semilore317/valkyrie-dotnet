@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Valkyrie.Instruments;
 using Valkyrie.MatchingEngine;
 using Valkyrie.MatchingEngine.Algorithms;
