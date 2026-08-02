@@ -1,15 +1,53 @@
 ﻿using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
+using Valkyrie.Api.Simulation.Lobster.Enums;
+using Valkyrie.Core.Configuration;
 
 namespace Valkyrie.Api.MarketData;
 
 public static class MarketDataEndpoints
 {
     private record ClientMessage(string Action, long SecurityId);
+    private record MarketDataStatusResponse(
+        string Mode,
+        string Liquidity,
+        bool OrderEntryEnabled,
+        double? PlaybackSpeed
+    );
 
     public static void MapMarketDataEndpoints(this WebApplication app)
     {
+        app.MapGet("/market-data/status", (
+            IOptions<MarketSimulatorConfiguration> options) =>
+        {
+            var configuration = options.Value;
+
+            var mode = configuration.Enabled
+                ? configuration.Source switch
+                {
+                    MarketDataSourceType.Synthetic => "synthetic",
+                    MarketDataSourceType.LobsterReplay => "historicalReplay",
+                    _ => throw new InvalidOperationException(
+                        $"Market-data source {configuration.Source} not supported")
+                }
+                : "manual";
+
+            var isHistoricalReplay = configuration.Enabled &&
+                                     configuration.Source == MarketDataSourceType.LobsterReplay;
+            double? playbackSpeed = isHistoricalReplay
+                ? configuration.HistoricalReplay.PlaybackSpeed
+                : null;
+
+            return Results.Ok(new MarketDataStatusResponse(
+                mode,
+                isHistoricalReplay ? "observational" : "executable",
+                !isHistoricalReplay,
+                playbackSpeed
+            ));
+        });
+
         app.Map("/ws/marketdata", async (HttpContext context, MarketDataHub hub, OrderGateway gateway)
             =>
         {

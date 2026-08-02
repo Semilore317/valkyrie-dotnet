@@ -4,7 +4,14 @@ import {vi} from 'vitest';
 import {App} from './app';
 import {MarketDataService} from './MarketData.service';
 import {TradingApiService} from './TradingApi.service';
-import {Instrument, MarketMessage} from './trading.models';
+import {Instrument, MarketDataStatus, MarketMessage} from './trading.models';
+
+const executableStatus: MarketDataStatus = {
+  mode: 'synthetic',
+  liquidity: 'executable',
+  orderEntryEnabled: true,
+  playbackSpeed: null
+};
 
 const configuredInstruments: Instrument[] = [
   {securityId: 1, ticker: 'MSFT', name: 'Microsoft Corporation'},
@@ -18,14 +25,15 @@ describe('App', () => {
   const marketData = {
     connect: vi.fn<(
       securityIds: number[],
-      onMessage:(message: MarketMessage) => void,
-      onStatus:(status: string) => void
+      onMessage: (message: MarketMessage) => void,
+      onStatus: (status: string) => void
     ) => void>(),
     disconnect: vi.fn()
   };
 
 
   const tradingApi = {
+    getMarketDataStatus: vi.fn(() => of(executableStatus)),
     getInstruments: vi.fn(() => of(configuredInstruments)),
     createSession: vi.fn(() => of({
       sessionId: 'test-session-id',
@@ -142,18 +150,18 @@ describe('App', () => {
 
   it("loads configured instruments before subscribing",
     () => {
-    const fixture = TestBed.createComponent(App);
+      const fixture = TestBed.createComponent(App);
 
-    fixture.detectChanges();
+      fixture.detectChanges();
 
-    const component = fixture.componentInstance;
+      const component = fixture.componentInstance;
 
-    expect(tradingApi.getInstruments).toHaveBeenCalledOnce();
-    expect(component.instruments()).toEqual(configuredInstruments);
+      expect(tradingApi.getInstruments).toHaveBeenCalledOnce();
+      expect(component.instruments()).toEqual(configuredInstruments);
 
-    const [securityIds] = marketData.connect.mock.calls[0];
+      const [securityIds] = marketData.connect.mock.calls[0];
 
-    expect(securityIds).toEqual([1,2,3,4,5]);
+      expect(securityIds).toEqual([1, 2, 3, 4, 5]);
     });
 
   it(
@@ -242,4 +250,31 @@ describe('App', () => {
         .toBe(3);
     }
   );
+
+  it('shows historical replay as view-only',
+    () => {
+      const replayStatus: MarketDataStatus = {
+        mode: 'historicalReplay',
+        liquidity: 'observational',
+        orderEntryEnabled: false,
+        playbackSpeed: 1
+      };
+
+      tradingApi.getMarketDataStatus.mockReturnValueOnce(
+        of(replayStatus)
+      );
+
+      const fixture = TestBed.createComponent(App);
+
+      fixture.detectChanges();
+
+      const element = fixture.nativeElement as HTMLElement;
+
+      expect(element.textContent)
+        .toContain('HISTORICAL REPLAY · VIEW ONLY · 1x');
+      expect(element.querySelector('form.entry'))
+        .toBeNull();
+      expect(tradingApi.createSession)
+        .not.toHaveBeenCalled();
+    });
 });

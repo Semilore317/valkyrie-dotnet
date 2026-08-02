@@ -305,7 +305,7 @@ Prices are expressed in integer cents:
 
 The replay source publishes historical book snapshots and `marketTrade` messages directly to the market-data feed. It does not seed or modify the local matching engine.
 
-Orders submitted through the dashboard or REST API continue to execute only against the separate local matching-engine book. A price level displayed from historical replay cannot currently fill a user order, even though both may use the same security ID.
+During replay, the dashboard identifies the feed as view-only and disables local order entry. Orders submitted directly through the REST API still execute only against the separate local matching-engine book. A price level displayed from historical replay cannot fill a user order, even though both may use the same security ID.
 
 ### Obtaining LOBSTER data
 
@@ -407,6 +407,7 @@ The API is available at `http://localhost:5000`.
 | Method | Route | Purpose |
 |---|---|---|
 | `GET` | `/instruments` | Read the canonical instrument catalogue |
+| `GET` | `/market-data/status` | Read the active market-data mode and liquidity semantics |
 | `POST` | `/orders` | Submit an order |
 | `PUT` | `/instruments/{securityId}/orders/{orderId}` | Modify an order |
 | `DELETE` | `/instruments/{securityId}/orders/{orderId}?username={username}` | Cancel an order |

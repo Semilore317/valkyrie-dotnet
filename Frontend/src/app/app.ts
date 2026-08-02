@@ -16,7 +16,8 @@ import {
   WorkingOrder,
   TradeMessage,
   OrderSide,
-  Instrument
+  Instrument,
+  MarketDataStatus
 } from './trading.models';
 
 interface Level {
@@ -67,6 +68,35 @@ export class App implements OnInit, OnDestroy {
   readonly tape = computed(
     () => this.tapesByInstrument()[this.activeId()] ?? []
   );
+  readonly marketDataStatus = signal<MarketDataStatus | null>(null);
+  readonly marketDataStatusError = signal(false);
+  readonly isHistoricalReplay = computed(
+    () => this.marketDataStatus()?.mode === 'historicalReplay'
+  );
+  readonly orderEntryEnabled = computed(
+    () => this.marketDataStatus()?.orderEntryEnabled === true
+  );
+
+  readonly marketModeLabel = computed(() => {
+    if (this.marketDataStatusError())
+      return 'MODE UNAVAILABLE';
+
+    const status = this.marketDataStatus();
+
+    if (!status)
+      return 'LOADING MODE';
+
+    switch (status.mode) {
+      case 'historicalReplay':
+        return `HISTORICAL REPLAY · VIEW ONLY · ${status.playbackSpeed ?? 1}x`;
+      case 'synthetic':
+        return 'SYNTHETIC · EXECUTABLE';
+      case 'manual':
+        return 'MANUAL · EXECUTABLE';
+      default:
+        return 'MODE UNAVAILABLE';
+    }
+  });
 
   private nextTapeRowId = 0;
 
@@ -213,9 +243,9 @@ export class App implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.applyTheme();
+    this.loadMarketDataStatus();
     this.loadInstruments();
     this.startTraceSampling();
-    this.initializeTradingSession();
   }
 
   ngOnDestroy(): void {
@@ -295,6 +325,11 @@ export class App implements OnInit, OnDestroy {
   submit(event: Event): void {
     event?.preventDefault();
     this.submitError.set('');
+
+    if (!this.orderEntryEnabled()) {
+      this.submitError.set('Order entry is unavailable in historical replay mode.');
+      return;
+    }
 
     if (!this.trader().trim()) {
       this.submitError.set('Enter a trader name');
@@ -654,10 +689,23 @@ export class App implements OnInit, OnDestroy {
     return priceQuantity / quantity;
   }
 
+  private loadMarketDataStatus(): void {
+    this.api.getMarketDataStatus().subscribe({
+      next: status => {
+        this.marketDataStatus.set(status);
+
+        if (status.orderEntryEnabled)
+          this.initializeTradingSession();
+      },
+      error: () => {
+        this.marketDataStatusError.set(true);
+      }
+    });
+  }
+
   private initializeTradingSession(): void {
     // sessionStorage preserves the session through a browser refresh
-    // but opening a separate tab creates a logically  separate session
-
+    // but opening a separate tab creates a logically separate session
     const savedSessionId = sessionStorage.getItem('sessionId');
 
     if (savedSessionId) {

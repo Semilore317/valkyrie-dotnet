@@ -44,6 +44,14 @@
     </div>
 
     <div class="hstatus">
+      <span
+        class="chip market-mode"
+        [class.replay]="isHistoricalReplay()"
+      >
+        <span class="sq"></span>
+        <b>{{ marketModeLabel() }}</b>
+      </span>
+
       <span class="chip live">
         <span class="sq"></span>
         <b>{{ connectionStatus() }}</b>
@@ -115,7 +123,11 @@
       <div class="phead">
         <h2>Depth Order · Book</h2>
         <span class="meta">
-          Level 2 · {{ askRows().length + bidRows().length }} levels
+          @if (isHistoricalReplay()) {
+            LOBSTER Level 2 &middot; observational
+          } @else {
+            Level 2 &middot; {{ askRows().length + bidRows().length }} levels
+          }
         </span>
       </div>
 
@@ -216,7 +228,8 @@
         </div>
 
 
-        <form class="entry" autocomplete="off" (submit)="submit($event)">
+        @if (orderEntryEnabled()) {
+          <form class="entry" autocomplete="off" (submit)="submit($event)">
           <div class="seg" role="group" aria-label="Order side">
             <button type="button" data-side="buy"
                     [attr.aria-pressed]="side() == 'buy'" (click)="setSide('buy')"
@@ -286,10 +299,31 @@
           <button type="submit" class="submit" [attr.data-side]="side()" [disabled]="isSubmitting()">
             Place {{ side() }} order
           </button>
-        </form>
+          </form>
+        } @else {
+          <div class="mode-notice">
+            @if (isHistoricalReplay()) {
+              <strong>Historical replay</strong>
+
+              <p>
+                This order book is observational. Displayed liquidity
+                cannot execute local orders.
+              </p>
+
+              <small>
+                Start Valkyrie with the simulated-market profile to
+                submit executable orders.
+              </small>
+            } @else {
+              <strong>Order entry unavailable</strong>
+              <p>Waiting for the backend market mode.</p>
+            }
+          </div>
+        }
       </section>
 
-      <section class="panel">
+      @if (orderEntryEnabled()) {
+        <section class="panel">
         <div class="phead">
           <h2>Working Orders</h2>
           <span class="meta">
@@ -340,14 +374,17 @@
             <p class="empty">No resting orders...</p>
           }
         </div>
-      </section>
+        </section>
+      }
     </div>
 
     <!-- Trade Tape -->
     <section class="panel tape-panel">
       <div class="phead">
         <h2>Trade Tape</h2>
-        <span class="meta">market prints</span>
+        <span class="meta">
+          {{ isHistoricalReplay() ? 'historical market prints' : 'market prints' }}
+        </span>
       </div>
 
       <div class="tape-head">
@@ -376,7 +413,8 @@
     </section>
 
     <!-- Session Trades -->
-    <section class="panel executions-panel">
+    @if (orderEntryEnabled()) {
+      <section class="panel executions-panel">
       <div class="phead">
         <h2>Session Trades</h2>
 
@@ -498,6 +536,7 @@
           </p>
         }
       </div>
-    </section>
+      </section>
+    }
   </div>
 </div>
