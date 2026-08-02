@@ -45,7 +45,19 @@ public sealed class ValkyrieHostBuilder
                 // when any service asks for any of these, create one and give them that
                 // and only ever create one instance (singleton) for the whole application lifetime
                 services.AddSingleton<IValkyrie, Valkyrie>();
-                services.AddSingleton<ITextLogger, TextLogger>();
+                services.AddSingleton<ITextLogger>(serviceProvider =>
+                {
+                    var options = serviceProvider
+                        .GetRequiredService<IOptions<LoggingConfiguration>>();
+
+                    return options.Value.LoggerType switch
+                    {
+                        LoggerType.Text => new TextLogger(options),
+                        LoggerType.Console => new ConsoleTextLogger(),
+                        _ => throw new InvalidOperationException(
+                            $"Logger type '{options.Value.LoggerType}' is not supported.")
+                    };
+                });
                 services.AddSingleton<IMatchingAlgorithm>(sp =>
                 {
                     var configuration = sp.GetRequiredService<IOptions<MatchingEngineConfiguration>>().Value;
