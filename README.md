@@ -264,7 +264,7 @@ Instrument and simulator configuration lives in `Valkyrie/appsettings.json`.
     "Enabled": false,
     "Source": "Synthetic",
     "HistoricalReplay": {
-      "PlaybackSpeed": 60,
+      "PlaybackSpeed": 1,
       "MaxBookUpdatesPerSecond": 5,
       "Loop": false,
       "Instruments": [
