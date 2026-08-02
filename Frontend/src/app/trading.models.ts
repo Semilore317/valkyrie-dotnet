@@ -1,17 +1,17 @@
 ﻿export type OrderSide = 'buy' | 'sell';
 
-export interface Instrument{
+export interface Instrument {
   securityId: number;
   ticker: string;
   name: string;
 }
 
-export interface Level{
+export interface Level {
   price: number;
   quantity: number;
 }
 
-export interface BookMessage{
+export interface BookMessage {
   type: 'book';
   securityId: number;
   bid: number | null;
@@ -21,7 +21,7 @@ export interface BookMessage{
   asks: Level[];
 }
 
-export interface TradeMessage{
+export interface TradeMessage {
   type: 'trade';
   securityId: number;
   bidOrderId: number;
@@ -32,7 +32,7 @@ export interface TradeMessage{
   aggressorSide: OrderSide;
 }
 
-export interface MarketTradeMessage{
+export interface MarketTradeMessage {
   type: 'marketTrade';
   securityId: number;
   price: number;
@@ -41,7 +41,7 @@ export interface MarketTradeMessage{
   aggressorSide: OrderSide;
 }
 
-export interface TradingSession{
+export interface TradingSession {
   sessionId: string; // since they're Guids not just digits
   createdAt: string;
 }
@@ -57,7 +57,7 @@ export interface MarketDataStatus {
   playbackSpeed: number | null;
 }
 
-export interface PlaceOrderRequest{
+export interface PlaceOrderRequest {
   sessionId: string;
   securityId: number;
   username: string;
@@ -66,7 +66,7 @@ export interface PlaceOrderRequest{
   quantity: number;
 }
 
-export interface OrderAck{
+export interface OrderAck {
   orderId: number;
   matched: boolean;
   fills: Array<{
@@ -77,7 +77,7 @@ export interface OrderAck{
   }>;
 }
 
-export interface WorkingOrder{
+export interface WorkingOrder {
   orderId: number;
   securityId: number;
   ticker: string;
@@ -88,9 +88,9 @@ export interface WorkingOrder{
   filledQuantity: number;
 }
 
-export interface Execution{
+export interface Execution {
   executionId: string;
-  matchId: string,
+  matchId: string;
   sessionId: string;
   securityId: number;
   orderId: number;

@@ -1,14 +1,7 @@
-import {
-  Component,
-  computed,
-  inject,
-  OnDestroy,
-  OnInit,
-  signal
-} from '@angular/core';
-import {DatePipe} from '@angular/common';
-import {MarketDataService} from './MarketData.service';
-import {TradingApiService} from './TradingApi.service';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { MarketDataService } from './MarketData.service';
+import { TradingApiService } from './TradingApi.service';
 import {
   BookMessage,
   Execution,
@@ -17,7 +10,7 @@ import {
   TradeMessage,
   OrderSide,
   Instrument,
-  MarketDataStatus
+  MarketDataStatus,
 } from './trading.models';
 
 interface Level {
@@ -52,7 +45,7 @@ interface TracePoint {
   selector: 'app-root',
   imports: [DatePipe],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
 })
 export class App implements OnInit, OnDestroy {
   private readonly marketData = inject(MarketDataService);
@@ -65,26 +58,20 @@ export class App implements OnInit, OnDestroy {
   readonly dark = signal(this.getInitialTheme());
 
   readonly tapesByInstrument = signal<Record<number, TapeRow[]>>({});
-  readonly tape = computed(
-    () => this.tapesByInstrument()[this.activeId()] ?? []
-  );
+  readonly tape = computed(() => this.tapesByInstrument()[this.activeId()] ?? []);
   readonly marketDataStatus = signal<MarketDataStatus | null>(null);
   readonly marketDataStatusError = signal(false);
   readonly isHistoricalReplay = computed(
-    () => this.marketDataStatus()?.mode === 'historicalReplay'
+    () => this.marketDataStatus()?.mode === 'historicalReplay',
   );
-  readonly orderEntryEnabled = computed(
-    () => this.marketDataStatus()?.orderEntryEnabled === true
-  );
+  readonly orderEntryEnabled = computed(() => this.marketDataStatus()?.orderEntryEnabled === true);
 
   readonly marketModeLabel = computed(() => {
-    if (this.marketDataStatusError())
-      return 'MODE UNAVAILABLE';
+    if (this.marketDataStatusError()) return 'MODE UNAVAILABLE';
 
     const status = this.marketDataStatus();
 
-    if (!status)
-      return 'LOADING MODE';
+    if (!status) return 'LOADING MODE';
 
     switch (status.mode) {
       case 'historicalReplay':
@@ -124,64 +111,61 @@ export class App implements OnInit, OnDestroy {
   readonly midTrace = computed(() => this.tracesByInstrument()[this.activeId()] ?? []);
 
   readonly activeInstrument = computed(() =>
-    this.instruments().find(execution => execution.securityId === this.activeId())
+    this.instruments().find((execution) => execution.securityId === this.activeId()),
   );
 
   readonly activeExecutions = computed(() =>
-    this.executions().filter(
-      execution => execution.securityId === this.activeId()
-    )
+    this.executions().filter((execution) => execution.securityId === this.activeId()),
   );
 
   readonly sessionBoughtQuantity = computed(() =>
     this.executions()
-      .filter(execution => execution.side === 'Buy')
-      .reduce((total, execution) => total + execution.quantity, 0)
+      .filter((execution) => execution.side === 'Buy')
+      .reduce((total, execution) => total + execution.quantity, 0),
   );
 
   readonly sessionSoldQuantity = computed(() =>
     this.executions()
-      .filter(execution => execution.side === 'Sell')
-      .reduce((total, execution) => total + execution.quantity, 0)
+      .filter((execution) => execution.side === 'Sell')
+      .reduce((total, execution) => total + execution.quantity, 0),
   );
 
-  readonly sessionNetQuantity = computed(() =>
-    this.sessionBoughtQuantity() - this.sessionSoldQuantity()
+  readonly sessionNetQuantity = computed(
+    () => this.sessionBoughtQuantity() - this.sessionSoldQuantity(),
   );
 
   readonly buyVWAP = computed(() =>
-    this.calculateVWAP(this.executions().filter(
-      execution => execution.side === 'Buy'
-    )));
+    this.calculateVWAP(this.executions().filter((execution) => execution.side === 'Buy')),
+  );
 
   readonly sellVWAP = computed(() =>
-    this.calculateVWAP(this.executions().filter(
-      execution => execution.side === 'Sell'
-    )));
+    this.calculateVWAP(this.executions().filter((execution) => execution.side === 'Sell')),
+  );
 
   readonly makerPercentage = computed(() => {
     const executions = this.executions();
 
-    if (executions.length === 0)
-      return 0;
+    if (executions.length === 0) return 0;
 
     const makerExecutions = executions.filter(
-      execution => execution.liquidityRole === 'Maker'
+      (execution) => execution.liquidityRole === 'Maker',
     ).length;
 
-    return makerExecutions / executions.length * 100;
+    return (makerExecutions / executions.length) * 100;
   });
 
   readonly bestAsk = computed(() => this.asks()[0]?.price ?? null);
   readonly bestBid = computed(() => this.bids()[0]?.price ?? null);
 
   readonly spreadCents = computed(() => {
-    const a = this.bestAsk(), b = this.bestBid();
+    const a = this.bestAsk(),
+      b = this.bestBid();
     return a !== null && b !== null ? a - b : null;
   });
 
   readonly mid = computed(() => {
-    const a = this.bestAsk(), b = this.bestBid();
+    const a = this.bestAsk(),
+      b = this.bestBid();
     return a !== null && b !== null ? (a + b) / 2 : null;
   });
 
@@ -198,8 +182,7 @@ export class App implements OnInit, OnDestroy {
   });
 
   readonly totalBookDepth = computed(() =>
-    [...this.asks(), ...this.bids()]
-      .reduce((total, level) => total + level.quantity, 0)
+    [...this.asks(), ...this.bids()].reduce((total, level) => total + level.quantity, 0),
   );
 
   readonly tracePoints = computed<TracePoint[]>(() => {
@@ -220,20 +203,23 @@ export class App implements OnInit, OnDestroy {
     const minimum = centre - range / 2;
 
     return prices.map((price, index) => {
-      const x = prices.length === 1
-        ? width - horizontalPadding
-        : horizontalPadding + (index / (prices.length - 1)) * (width - horizontalPadding * 2);
-      const y = height - verticalPadding -
-        ((price - minimum) / range) * (height - verticalPadding * 2);
+      const x =
+        prices.length === 1
+          ? width - horizontalPadding
+          : horizontalPadding + (index / (prices.length - 1)) * (width - horizontalPadding * 2);
+      const y =
+        height - verticalPadding - ((price - minimum) / range) * (height - verticalPadding * 2);
 
-      return {price, x, y};
+      return { price, x, y };
     });
   });
 
   readonly tracePath = computed(() =>
-    this.tracePoints().map((point, index) =>
-      `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`,
-    ).join(' '),
+    this.tracePoints()
+      .map(
+        (point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`,
+      )
+      .join(' '),
   );
 
   readonly traceTip = computed(() => {
@@ -251,12 +237,11 @@ export class App implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.marketData.disconnect();
 
-    if (this.traceTimer !== undefined)
-      window.clearInterval(this.traceTimer);
+    if (this.traceTimer !== undefined) window.clearInterval(this.traceTimer);
   }
 
   toggleTheme(): void {
-    this.dark.update(isDark => !isDark);
+    this.dark.update((isDark) => !isDark);
 
     const theme = this.dark() ? 'dark' : 'light';
 
@@ -279,8 +264,7 @@ export class App implements OnInit, OnDestroy {
   instrumentMidDollars(securityId: number): number | null {
     const midInCents = this.latestMidsByInstrument()[securityId];
 
-    if (midInCents === undefined)
-      return null;
+    if (midInCents === undefined) return null;
 
     return midInCents / 100;
   }
@@ -290,9 +274,7 @@ export class App implements OnInit, OnDestroy {
 
     // ordinary cent-priced executions use two decimals
     // sub-cent prints retain precision
-    return Number.isInteger(priceInCents)
-      ? priceInDollars.toFixed(2)
-      : priceInDollars.toFixed(4);
+    return Number.isInteger(priceInCents) ? priceInDollars.toFixed(2) : priceInDollars.toFixed(4);
   }
 
   onTraceMove(event: MouseEvent): void {
@@ -345,76 +327,73 @@ export class App implements OnInit, OnDestroy {
 
     const sessionId = this.sessionId();
     if (!sessionId) {
-      this.submitError.set("Trading session is still initializing");
+      this.submitError.set('Trading session is still initializing');
       this.isSubmitting.set(false);
       return;
     }
 
-    this.api.placeOrder({
-      sessionId,
-      securityId: this.activeId(),
-      username: this.trader().trim(),
-      side: this.side() === 'buy' ? 'Buy' : 'Sell',
-      price: this.priceCents(),
-      quantity: this.quantity(),
-    }).subscribe({
-      next: ack => {
-        const instrument = this.activeInstrument();
-        const submittedSide = this.side();
-        const submittedQuantity = this.quantity();
+    this.api
+      .placeOrder({
+        sessionId,
+        securityId: this.activeId(),
+        username: this.trader().trim(),
+        side: this.side() === 'buy' ? 'Buy' : 'Sell',
+        price: this.priceCents(),
+        quantity: this.quantity(),
+      })
+      .subscribe({
+        next: (ack) => {
+          const instrument = this.activeInstrument();
+          const submittedSide = this.side();
+          const submittedQuantity = this.quantity();
 
-        const immediatelyFilled = ack.fills
-          .filter(fill =>
-            submittedSide === 'buy'
-              ? fill.bidOrderId === ack.orderId
-              : fill.askOrderId === ack.orderId
-          ).reduce((total, fill) => total + fill.quantity, 0);
+          const immediatelyFilled = ack.fills
+            .filter((fill) =>
+              submittedSide === 'buy'
+                ? fill.bidOrderId === ack.orderId
+                : fill.askOrderId === ack.orderId,
+            )
+            .reduce((total, fill) => total + fill.quantity, 0);
 
-        const remainingQuantity = Math.max(
-          0,
-          submittedQuantity - immediatelyFilled
-        );
+          const remainingQuantity = Math.max(0, submittedQuantity - immediatelyFilled);
 
-        // add the order when any quantity remains
-        // whether it's a full or partial fill
-        if (instrument && remainingQuantity > 0) {
-          this.workingOrders.update(orders => [
-            {
-              orderId: ack.orderId,
-              securityId: instrument.securityId,
-              ticker: instrument.ticker,
-              username: this.trader().trim(),
-              side: submittedSide,
-              price: this.priceCents(),
-              quantity: submittedQuantity,
-              filledQuantity: immediatelyFilled
-            }, ...orders
-          ]);
-        }
-        this.isSubmitting.set(false);
-        this.loadExecutions();
-      },
-      error: () => {
-        this.submitError.set('Order not accepted.');
-        this.isSubmitting.set(false);
-      },
-    });
+          // add the order when any quantity remains
+          // whether it's a full or partial fill
+          if (instrument && remainingQuantity > 0) {
+            this.workingOrders.update((orders) => [
+              {
+                orderId: ack.orderId,
+                securityId: instrument.securityId,
+                ticker: instrument.ticker,
+                username: this.trader().trim(),
+                side: submittedSide,
+                price: this.priceCents(),
+                quantity: submittedQuantity,
+                filledQuantity: immediatelyFilled,
+              },
+              ...orders,
+            ]);
+          }
+          this.isSubmitting.set(false);
+          this.loadExecutions();
+        },
+        error: () => {
+          this.submitError.set('Order not accepted.');
+          this.isSubmitting.set(false);
+        },
+      });
   }
 
   cancelOrder(order: WorkingOrder): void {
-    this.api.cancelOrder(
-      order.securityId,
-      order.orderId,
-      order.username
-    ).subscribe({
+    this.api.cancelOrder(order.securityId, order.orderId, order.username).subscribe({
       next: () => {
-        this.workingOrders.update(orders =>
-          orders.filter(item => item.orderId !== order.orderId));
+        this.workingOrders.update((orders) =>
+          orders.filter((item) => item.orderId !== order.orderId),
+        );
       },
-      error: () => this.submitError.set('Order could not be cancelled')
-    })
+      error: () => this.submitError.set('Order could not be cancelled'),
+    });
   }
-
 
   private applyTheme(): void {
     if (typeof document !== 'undefined') {
@@ -424,8 +403,8 @@ export class App implements OnInit, OnDestroy {
 
   private loadInstruments(): void {
     this.api.getInstruments().subscribe({
-      next: instruments => {
-        if(instruments.length === 0) {
+      next: (instruments) => {
+        if (instruments.length === 0) {
           this.connectionStatus.set('NO INSTRUMENTS');
           return;
         }
@@ -438,62 +417,56 @@ export class App implements OnInit, OnDestroy {
 
       error: () => {
         this.connectionStatus.set('CATALOGUE ERROR');
-      }
+      },
     });
   }
 
   private connectToMarketData(): void {
     this.connectionStatus.set('CONNECTING');
 
-    const securityIds = this.instruments().map(
-      instrument => instrument.securityId,
-    );
+    const securityIds = this.instruments().map((instrument) => instrument.securityId);
 
     this.marketData.connect(
       securityIds,
-      message => this.handleMarketMessage(message),
-      status => this.connectionStatus.set(status)
+      (message) => this.handleMarketMessage(message),
+      (status) => this.connectionStatus.set(status),
     );
   }
 
   private applyTradeToWorkingOrders(trade: TradeMessage): void {
     const concernsWorkingOrder = this.workingOrders().some(
-      order => order.securityId === trade.securityId
-        && (
-          (order.side === 'buy' && order.orderId === trade.bidOrderId) ||
-          (order.side === 'sell' && order.orderId === trade.askOrderId)
-        ));
+      (order) =>
+        order.securityId === trade.securityId &&
+        ((order.side === 'buy' && order.orderId === trade.bidOrderId) ||
+          (order.side === 'sell' && order.orderId === trade.askOrderId)),
+    );
 
-    this.workingOrders.update(orders =>
-      orders.flatMap(order => {
+    this.workingOrders.update((orders) =>
+      orders.flatMap((order) => {
         // ids are global, but checking securityId prevents
         // accidental updates after a server restart or ID reuse
-        if (order.securityId !== trade.securityId)
-          return [order];
+        if (order.securityId !== trade.securityId) return [order];
 
         const isFilledOrder =
           (order.side == 'buy' && order.orderId === trade.bidOrderId) ||
-          (order.side == 'sell' && order.orderId === trade.askOrderId)
+          (order.side == 'sell' && order.orderId === trade.askOrderId);
 
-        if (!isFilledOrder)
-          return [order];
+        if (!isFilledOrder) return [order];
 
-        const filledQuantity = Math.min(
-          order.quantity,
-          order.filledQuantity + trade.quantity
-        );
+        const filledQuantity = Math.min(order.quantity, order.filledQuantity + trade.quantity);
 
         // a filled order is no longer resting
-        if (filledQuantity >= order.quantity)
-          return [];
+        if (filledQuantity >= order.quantity) return [];
 
-        return [{
-          ...order,
-          filledQuantity
-        }];
-      }))
-    if (concernsWorkingOrder)
-      this.loadExecutions();
+        return [
+          {
+            ...order,
+            filledQuantity,
+          },
+        ];
+      }),
+    );
+    if (concernsWorkingOrder) this.loadExecutions();
   }
 
   private handleMarketMessage(message: MarketMessage): void {
@@ -510,7 +483,7 @@ export class App implements OnInit, OnDestroy {
           message.price,
           message.quantity,
           message.aggressorSide,
-          message.filledAt
+          message.filledAt,
         );
 
         return;
@@ -521,7 +494,7 @@ export class App implements OnInit, OnDestroy {
           message.price,
           message.quantity,
           message.aggressorSide,
-          message.occurredAt
+          message.occurredAt,
         );
 
         return;
@@ -533,7 +506,7 @@ export class App implements OnInit, OnDestroy {
     price: number,
     quantity: number,
     side: OrderSide,
-    occurredAt: string
+    occurredAt: string,
   ): void {
     const row: TapeRow = {
       id: ++this.nextTapeRowId,
@@ -541,41 +514,36 @@ export class App implements OnInit, OnDestroy {
       price,
       quantity,
       side,
-      occurredAt
+      occurredAt,
     };
 
-    this.tapesByInstrument.update(
-      tapes => ({
-        ...tapes,
+    this.tapesByInstrument.update((tapes) => ({
+      ...tapes,
 
-        [securityId]: [
-          row,
-          ...(tapes[securityId] ?? [])
-        ].slice(0, 60)
-      })
-    );
+      [securityId]: [row, ...(tapes[securityId] ?? [])].slice(0, 60),
+    }));
   }
 
   private applyBook(book: BookMessage): void {
-    this.booksByInstrument.update(books => ({
+    this.booksByInstrument.update((books) => ({
       ...books,
-      [book.securityId]: book
+      [book.securityId]: book,
     }));
 
     if (book.bid !== null && book.ask !== null) {
       const mid = (book.bid + book.ask) / 2;
 
-      this.latestMidsByInstrument.update(mids => ({
+      this.latestMidsByInstrument.update((mids) => ({
         ...mids,
-        [book.securityId]: mid
+        [book.securityId]: mid,
       }));
 
       const trace = this.tracesByInstrument()[book.securityId];
 
       if (!trace || trace.length === 0) {
-        this.tracesByInstrument.update(traces => ({
+        this.tracesByInstrument.update((traces) => ({
           ...traces,
-          [book.securityId]: Array.from({length: 90}, () => mid),
+          [book.securityId]: Array.from({ length: 90 }, () => mid),
         }));
       }
     }
@@ -596,40 +564,30 @@ export class App implements OnInit, OnDestroy {
         quantity: l.quantity,
         cumulative,
         depthPercentage: (cumulative / max) * 100,
-        isBest: i === 0
+        isBest: i === 0,
       };
     });
   }
 
   private getInitialTheme(): boolean {
-    if (typeof localStorage === 'undefined')
-      return false;
+    if (typeof localStorage === 'undefined') return false;
 
     const savedTheme = localStorage.getItem('theme');
 
-    if (savedTheme === 'dark')
-      return true;
+    if (savedTheme === 'dark') return true;
 
-    if (savedTheme === 'light')
-      return false;
+    if (savedTheme === 'light') return false;
 
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function')
-      return false;
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
 
     //first visit: follow the device/broswer prefernce
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
-  private appendTraceSample(
-    securityId: number,
-    price: number,
-  ) {
-    this.tracesByInstrument.update(traces => ({
+  private appendTraceSample(securityId: number, price: number) {
+    this.tracesByInstrument.update((traces) => ({
       ...traces,
-      [securityId]: [
-        ...(traces[securityId] ?? []).slice(-89),
-        price
-      ]
+      [securityId]: [...(traces[securityId] ?? []).slice(-89), price],
     }));
   }
 
@@ -645,45 +603,38 @@ export class App implements OnInit, OnDestroy {
   loadExecutions(): void {
     const sessionId = this.sessionId();
 
-    if (!sessionId)
-      return;
+    if (!sessionId) return;
 
     this.executionsLoading.set(true);
     this.executionError.set('');
 
     this.api.getExecutions(sessionId).subscribe({
-      next: executions => {
+      next: (executions) => {
         // sort newest first, even if the server ordering changes later
         this.executions.set(
           [...executions].sort(
-            (a, b) => new Date(b.executedAt).getTime() - new Date(a.executedAt).getTime()
-          )
+            (a, b) => new Date(b.executedAt).getTime() - new Date(a.executedAt).getTime(),
+          ),
         );
 
         this.executionsLoading.set(false);
       },
       error: () => {
-        this.executionError.set(
-          'Execution history could not be loaded.'
-        );
+        this.executionError.set('Execution history could not be loaded.');
 
         this.executionsLoading.set(false);
-      }
+      },
     });
   }
 
-  private calculateVWAP(
-    executions: Execution[]
-  ): number | null {
-    const quantity = executions.reduce(
-      (total, execution) => total + execution.quantity, 0
-    );
+  private calculateVWAP(executions: Execution[]): number | null {
+    const quantity = executions.reduce((total, execution) => total + execution.quantity, 0);
 
-    if (quantity === 0)
-      return null;
+    if (quantity === 0) return null;
 
     const priceQuantity = executions.reduce(
-      (total, execution) => total + execution.price * execution.quantity, 0
+      (total, execution) => total + execution.price * execution.quantity,
+      0,
     );
 
     return priceQuantity / quantity;
@@ -691,15 +642,14 @@ export class App implements OnInit, OnDestroy {
 
   private loadMarketDataStatus(): void {
     this.api.getMarketDataStatus().subscribe({
-      next: status => {
+      next: (status) => {
         this.marketDataStatus.set(status);
 
-        if (status.orderEntryEnabled)
-          this.initializeTradingSession();
+        if (status.orderEntryEnabled) this.initializeTradingSession();
       },
       error: () => {
         this.marketDataStatusError.set(true);
-      }
+      },
     });
   }
 
@@ -715,7 +665,7 @@ export class App implements OnInit, OnDestroy {
     }
 
     this.api.createSession().subscribe({
-      next: session => {
+      next: (session) => {
         sessionStorage.setItem('sessionId', session.sessionId);
 
         this.sessionId.set(session.sessionId);
@@ -724,7 +674,7 @@ export class App implements OnInit, OnDestroy {
 
       error: () => {
         this.executionError.set('Trading session could not be created.');
-      }
+      },
     });
   }
 }
