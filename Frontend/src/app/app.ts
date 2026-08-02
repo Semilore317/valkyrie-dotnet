@@ -14,16 +14,10 @@ import {
   Execution,
   MarketMessage,
   WorkingOrder,
-  TradeMessage
+  TradeMessage,
+  OrderSide,
+  Instrument
 } from './trading.models';
-
-interface Instrument {
-  securityId: number;
-  symbol: string;
-  name: string;
-  last: number;
-  changePercent: number;
-}
 
 interface Level {
   price: number;
@@ -39,11 +33,12 @@ interface LadderRow {
 }
 
 interface TapeRow {
-  id: string,
+  id: number;
+  securityId: number;
   price: number;
   quantity: number;
-  side: 'buy' | 'sell';
-  filledAt: string;
+  side: OrderSide;
+  occurredAt: string;
 }
 
 interface TracePoint {
@@ -61,13 +56,19 @@ interface TracePoint {
 export class App implements OnInit, OnDestroy {
   private readonly marketData = inject(MarketDataService);
   private readonly api = inject(TradingApiService);
+  readonly activeId = signal(1);
 
-  readonly tape = signal<TapeRow[]>([]);
   readonly traceHover = signal<TracePoint | null>(null);
   private traceTimer?: number;
   readonly connectionStatus = signal('CONNECTING');
   readonly dark = signal(this.getInitialTheme());
-  readonly activeId = signal(1);
+
+  readonly tapesByInstrument = signal<Record<number, TapeRow[]>>({});
+  readonly tape = computed(
+    () => this.tapesByInstrument()[this.activeId()] ?? []
+  );
+
+  private nextTapeRowId = 0;
 
   readonly workingOrders = signal<WorkingOrder[]>([]);
   readonly sessionId = signal<string | null>(null);
@@ -75,28 +76,15 @@ export class App implements OnInit, OnDestroy {
   readonly executionsLoading = signal(false);
   readonly executionError = signal('');
 
-  readonly instruments = signal<Instrument[]>([
-    {securityId: 1, symbol: 'MSFT', name: 'Microsoft Corp', last: 418.05, changePercent: 1.5},
-    {securityId: 2, symbol: 'AAPL', name: 'Apple Inc', last: 227.15, changePercent: -0.18},
-    {securityId: 3, symbol: 'NVDA', name: 'Space Exploration Technologies Corp', last: 180.55, changePercent: 2.94},
-  ]);
+  readonly instruments = signal<Instrument[]>([]);
 
-  readonly asks = signal<Level[]>([
-    {price: 41810, quantity: 120}, {price: 41815, quantity: 340},
-    {price: 41820, quantity: 120}, {price: 41825, quantity: 560},
-    {price: 41835, quantity: 150}, {price: 41850, quantity: 700},
-  ]);
-
-  readonly bids = signal<Level[]>([
-    {price: 41800, quantity: 260}, {price: 41795, quantity: 480},
-    {price: 41790, quantity: 190}, {price: 41780, quantity: 620},
-    {price: 41770, quantity: 300}, {price: 41755, quantity: 540},
-  ]);
+  readonly asks = signal<Level[]>([]);
+  readonly bids = signal<Level[]>([]);
 
   readonly side = signal<'buy' | 'sell'>('buy');
   readonly trader = signal('Jon Snow');
-  readonly priceInput = signal('418.50');
-  readonly quantityInput = signal('500');
+  readonly quantityInput = signal('');
+  readonly priceInput = signal('');
   readonly submitError = signal('');
   readonly isSubmitting = signal(false);
   readonly tracesByInstrument = signal<Record<number, number[]>>({});
@@ -225,7 +213,7 @@ export class App implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.applyTheme();
-    this.connectToMarketData();
+    this.loadInstruments();
     this.startTraceSampling();
     this.initializeTradingSession();
   }
@@ -255,7 +243,26 @@ export class App implements OnInit, OnDestroy {
     const cachedBook = this.booksByInstrument()[id];
 
     this.bids.set(cachedBook?.bids ?? []);
-    this.bids.set(cachedBook?.asks ?? []);
+    this.asks.set(cachedBook?.asks ?? []);
+  }
+
+  instrumentMidDollars(securityId: number): number | null {
+    const midInCents = this.latestMidsByInstrument()[securityId];
+
+    if (midInCents === undefined)
+      return null;
+
+    return midInCents / 100;
+  }
+
+  formatTapePrice(priceInCents: number): string {
+    const priceInDollars = priceInCents / 100;
+
+    // ordinary cent-priced executions use two decimals
+    // sub-cent prints retain precision
+    return Number.isInteger(priceInCents)
+      ? priceInDollars.toFixed(2)
+      : priceInDollars.toFixed(4);
   }
 
   onTraceMove(event: MouseEvent): void {
@@ -340,7 +347,7 @@ export class App implements OnInit, OnDestroy {
             {
               orderId: ack.orderId,
               securityId: instrument.securityId,
-              symbol: instrument.symbol,
+              ticker: instrument.ticker,
               username: this.trader().trim(),
               side: submittedSide,
               price: this.priceCents(),
@@ -378,6 +385,26 @@ export class App implements OnInit, OnDestroy {
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', this.dark() ? 'dark' : 'light');
     }
+  }
+
+  private loadInstruments(): void {
+    this.api.getInstruments().subscribe({
+      next: instruments => {
+        if(instruments.length === 0) {
+          this.connectionStatus.set('NO INSTRUMENTS');
+          return;
+        }
+
+        this.instruments.set(instruments);
+        this.activeId.set(instruments[0].securityId);
+
+        this.connectToMarketData();
+      },
+
+      error: () => {
+        this.connectionStatus.set('CATALOGUE ERROR');
+      }
+    });
   }
 
   private connectToMarketData(): void {
@@ -435,28 +462,63 @@ export class App implements OnInit, OnDestroy {
   }
 
   private handleMarketMessage(message: MarketMessage): void {
-    if (message.type === 'book') {
-      this.applyBook(message);
-      return;
+    switch (message.type) {
+      case 'book':
+        this.applyBook(message);
+        return;
+
+      case 'trade':
+        this.applyTradeToWorkingOrders(message);
+
+        this.appendTapeRow(
+          message.securityId,
+          message.price,
+          message.quantity,
+          message.aggressorSide,
+          message.filledAt
+        );
+
+        return;
+
+      case 'marketTrade':
+        this.appendTapeRow(
+          message.securityId,
+          message.price,
+          message.quantity,
+          message.aggressorSide,
+          message.occurredAt
+        );
+
+        return;
     }
+  }
 
-    // a trade message has arrived, update and working order involved in this execution
-    this.applyTradeToWorkingOrders(message);
+  private appendTapeRow(
+    securityId: number,
+    price: number,
+    quantity: number,
+    side: OrderSide,
+    occurredAt: string
+  ): void {
+    const row: TapeRow = {
+      id: ++this.nextTapeRowId,
+      securityId,
+      price,
+      quantity,
+      side,
+      occurredAt
+    };
 
-    const side: TapeRow['side'] =
-      this.bestAsk() !== null && message.price >= this.bestAsk()!
-        ? 'buy'
-        : 'sell';
+    this.tapesByInstrument.update(
+      tapes => ({
+        ...tapes,
 
-    this.tape.update(rows => [
-      {
-        id: `${message.filledAt}-${message.price}-${message.quantity}`,
-        price: message.price,
-        quantity: message.quantity,
-        side,
-        filledAt: message.filledAt
-      }, ...rows,
-    ].slice(0, 60));
+        [securityId]: [
+          row,
+          ...(tapes[securityId] ?? [])
+        ].slice(0, 60)
+      })
+    );
   }
 
   private applyBook(book: BookMessage): void {
@@ -516,7 +578,7 @@ export class App implements OnInit, OnDestroy {
     if (savedTheme === 'light')
       return false;
 
-    if(typeof window === 'undefined' || typeof window.matchMedia !== 'function')
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function')
       return false;
 
     //first visit: follow the device/broswer prefernce

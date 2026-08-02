@@ -1,7 +1,7 @@
-using Instruments;
 using Valkyrie.OrderBook;
 using Valkyrie.Orders;
 using FluentAssertions;
+using Valkyrie.Instruments;
 
 namespace UnitTests;
 
@@ -12,7 +12,7 @@ public class OrderBookTests
 
     public OrderBookTests()
     {
-        _security = new Security(1, "MSFT");
+        _security = new Security(1, "MSFT", "Microsoft Corporation");
         _orderbook = new OrderBook(_security);
     }
 
@@ -120,19 +120,19 @@ public class OrderBookTests
     public void GetAskOrders_ShouldReturnEntriesInCorrectOrder()
     {
         // arrange
-        var cheapAsk = new Order(1, 1, "Goldman Sachs", Side.Sell,  70, 100 );
+        var cheapAsk = new Order(1, 1, "Goldman Sachs", Side.Sell, 70, 100);
         var midAsk = new Order(2, 1, "Goldman Sachs", Side.Sell, 75, 100);
         var expensiveAsk = new Order(3, 1, "Goldman Sachs", Side.Sell, 80, 100);
-        
+
         _orderbook.AddOrder(cheapAsk);
         _orderbook.AddOrder(midAsk);
         _orderbook.AddOrder(expensiveAsk);
-        
+
         var _askOrders = _orderbook.GetAskOrders();
-        
+
         // assert
         _askOrders.Count.Should().Be(3);
-        
+
         // should be sorted in ascending order
         _askOrders[0].Price.Should().Be(70);
         _askOrders[1].Price.Should().Be(75);
@@ -143,19 +143,19 @@ public class OrderBookTests
     public void GetBidOrders_ShouldReturnEntriesInCorrectOrder()
     {
         // arrange
-        var cheapBid = new Order(1, 1, "Jane Street",  Side.Buy, 70, 100);
+        var cheapBid = new Order(1, 1, "Jane Street", Side.Buy, 70, 100);
         var midBid = new Order(2, 1, "Jane Street", Side.Buy, 75, 100);
         var expensiveBid = new Order(3, 1, "Jane Street", Side.Buy, 80, 100);
-        
+
         _orderbook.AddOrder(cheapBid);
         _orderbook.AddOrder(midBid);
         _orderbook.AddOrder(expensiveBid);
-        
+
         var _bidOrders = _orderbook.GetBidOrders();
-        
+
         // assert
         _orderbook.Count.Should().Be(3);
-        
+
         // order book should be sorted in descending order
         _bidOrders[0].Price.Should().Be(80);
         _bidOrders[1].Price.Should().Be(75);

@@ -1,4 +1,5 @@
 ﻿using Valkyrie.MatchingEngine;
+using Valkyrie.Orders;
 
 namespace Valkyrie.Api.Dto;
 
@@ -8,10 +9,11 @@ public record TradeEvent(
     long AskOrderId,
     long Price,
     uint Quantity,
-    DateTime FilledAt
+    DateTime FilledAt,
+    Side AggressorSide
 )
 {
-    public static TradeEvent From(Fill fill)
+    public static TradeEvent From(Fill fill, Side aggressorSide)
     {
         return new TradeEvent(
             fill.SecurityId,
@@ -19,6 +21,7 @@ public record TradeEvent(
             fill.AskOrderId,
             fill.ExecutionPrice,
             fill.FilledQuantity,
-            fill.FilledAt);
+            fill.FilledAt,
+            aggressorSide);
     }
 }

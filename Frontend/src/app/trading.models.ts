@@ -1,5 +1,11 @@
 ﻿export type OrderSide = 'buy' | 'sell';
 
+export interface Instrument{
+  securityId: number;
+  ticker: string;
+  name: string;
+}
+
 export interface Level{
   price: number;
   quantity: number;
@@ -23,6 +29,16 @@ export interface TradeMessage{
   price: number;
   quantity: number;
   filledAt: string; // ISO timestamp from the API
+  aggressorSide: OrderSide;
+}
+
+export interface MarketTradeMessage{
+  type: 'marketTrade';
+  securityId: number;
+  price: number;
+  quantity: number;
+  occurredAt: string;
+  aggressorSide: OrderSide;
 }
 
 export interface TradingSession{
@@ -30,7 +46,7 @@ export interface TradingSession{
   createdAt: string;
 }
 
-export type MarketMessage = BookMessage | TradeMessage;
+export type MarketMessage = BookMessage | TradeMessage | MarketTradeMessage;
 export type LiquidityRole = 'Maker' | 'Taker';
 
 export interface PlaceOrderRequest{
@@ -56,7 +72,7 @@ export interface OrderAck{
 export interface WorkingOrder{
   orderId: number;
   securityId: number;
-  symbol: string;
+  ticker: string;
   username: string;
   side: OrderSide;
   price: number;

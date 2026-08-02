@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
-using Instruments;
+using Valkyrie.Instrument;
+using Valkyrie.Instruments;
 using Valkyrie.Orders;
 
 // grants private fields access without compromising encapsulation

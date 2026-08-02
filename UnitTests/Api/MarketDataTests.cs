@@ -16,8 +16,10 @@ public class MarketDataTests
     {
         public List<TradeEvent> Trades { get; } = new();
         public List<OrderBookSnapshot> BookSnapshots { get; } = new();
+        public List<MarketTradeEvent>  MarketTrades  {get;} = [];
         public void PublishTrade(TradeEvent trade) => Trades.Add(trade);
         public void PublishBook(OrderBookSnapshot bookSnapshot) => BookSnapshots.Add(bookSnapshot);
+        public void PublishMarketTrade(MarketTradeEvent marketTradeEvent) => MarketTrades.Add(marketTradeEvent);
     }
 
     private static (WebApplicationFactory<Program>, CapturingPublisher ) NewApp()
@@ -72,5 +74,7 @@ public class MarketDataTests
         publisher.Trades.Should().ContainSingle().Which.SecurityId.Should().Be(1);
         publisher.Trades[0].Quantity.Should().Be(70u);
         publisher.BookSnapshots.Last().SecurityId.Should().Be(1); // book republished after the cross
+        publisher.Trades.Single().AggressorSide.Should().Be(Side.Buy);
+        publisher.MarketTrades.Should().BeEmpty();
     }
 }

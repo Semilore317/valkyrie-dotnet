@@ -59,7 +59,7 @@ public class Limit
     }
 
 
-    public Side side
+    public Side Side
     {
         get
         {

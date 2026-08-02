@@ -4,14 +4,29 @@ import {vi} from 'vitest';
 import {App} from './app';
 import {MarketDataService} from './MarketData.service';
 import {TradingApiService} from './TradingApi.service';
+import {Instrument, MarketMessage} from './trading.models';
+
+const configuredInstruments: Instrument[] = [
+  {securityId: 1, ticker: 'MSFT', name: 'Microsoft Corporation'},
+  {securityId: 2, ticker: 'AAPL', name: 'Apple Inc.'},
+  {securityId: 3, ticker: 'AMZN', name: 'Amazon.com, Inc.'},
+  {securityId: 4, ticker: 'GOOG', name: 'Alphabet Inc.'},
+  {securityId: 5, ticker: 'INTC', name: 'Intel Corporation'}
+]
 
 describe('App', () => {
   const marketData = {
-    connect: vi.fn(),
-    disconnect: vi.fn(),
+    connect: vi.fn<(
+      securityIds: number[],
+      onMessage:(message: MarketMessage) => void,
+      onStatus:(status: string) => void
+    ) => void>(),
+    disconnect: vi.fn()
   };
 
+
   const tradingApi = {
+    getInstruments: vi.fn(() => of(configuredInstruments)),
     createSession: vi.fn(() => of({
       sessionId: 'test-session-id',
       createdAt: '2026-07-25T00:00:00Z',
@@ -124,4 +139,107 @@ describe('App', () => {
       'existing-session-id'
     );
   });
+
+  it("loads configured instruments before subscribing",
+    () => {
+    const fixture = TestBed.createComponent(App);
+
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+
+    expect(tradingApi.getInstruments).toHaveBeenCalledOnce();
+    expect(component.instruments()).toEqual(configuredInstruments);
+
+    const [securityIds] = marketData.connect.mock.calls[0];
+
+    expect(securityIds).toEqual([1,2,3,4,5]);
+    });
+
+  it(
+    'keeps historical market prints isolated by instrument',
+    () => {
+      const fixture =
+        TestBed.createComponent(App);
+
+      fixture.detectChanges();
+
+      const component =
+        fixture.componentInstance;
+
+      const workingOrder = {
+        orderId: 91,
+        securityId: 2,
+        ticker: 'AAPL',
+        username: 'Jon Snow',
+        side: 'buy' as const,
+        price: 58_500,
+        quantity: 100,
+        filledQuantity: 0
+      };
+
+      component.workingOrders.set([
+        workingOrder
+      ]);
+
+      const [, onMessage] =
+        marketData.connect.mock.calls[0];
+
+      const aaplPrint: MarketMessage = {
+        type: 'marketTrade',
+        securityId: 2,
+        price: 58_574.55,
+        quantity: 40,
+        occurredAt:
+          '2012-06-21T09:30:00.2750161-04:00',
+        aggressorSide: 'buy'
+      };
+
+      // Identical prints must remain separate rows.
+      onMessage(aaplPrint);
+      onMessage(aaplPrint);
+
+      onMessage({
+        type: 'marketTrade',
+        securityId: 3,
+        price: 22_382,
+        quantity: 10,
+        occurredAt:
+          '2012-06-21T09:30:01.0000000-04:00',
+        aggressorSide: 'sell'
+      });
+
+      component.select(2);
+
+      expect(component.tape())
+        .toHaveLength(2);
+
+      expect(
+        component.tape().every(
+          row => row.securityId === 2
+        )
+      ).toBe(true);
+
+      expect(
+        new Set(
+          component.tape().map(
+            row => row.id
+          )
+        ).size
+      ).toBe(2);
+
+      // Historical prints are observations,
+      // not fills of the user's local order.
+      expect(component.workingOrders())
+        .toEqual([workingOrder]);
+
+      component.select(3);
+
+      expect(component.tape())
+        .toHaveLength(1);
+
+      expect(component.tape()[0].securityId)
+        .toBe(3);
+    }
+  );
 });

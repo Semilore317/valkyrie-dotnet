@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Instruments;
+using Valkyrie.Instruments;
 using Valkyrie.MatchingEngine.Algorithms;
 using Valkyrie.Orders;
 using Engine = Valkyrie.MatchingEngine.MatchingEngine;
@@ -8,7 +8,7 @@ namespace UnitTests.MatchingEngine;
 
 public class ProRataTests
 {
-    private readonly Security _security = new Security(1, "AAPL");
+    private readonly Security _security = new Security(1, "AAPL", "Apple Inc.");
     private static readonly IComparer<Limit> BidComparer = BidLimitComparer.Comparer;
     private static readonly IComparer<Limit> AskComparer = AskLimitComparer.Comparer;
 
@@ -70,9 +70,9 @@ public class ProRataTests
 
         askLimits.Add(BuildLevel(100, Side.Sell, orders, (2, 100u)));
 
-        var incoming = new Order(1,1 , "Belvedere", Side.Buy, 99, 100u);
-        
-        var result = ProRata.Instance.MatchIncoming(incoming,bidLimits, askLimits, orders);
+        var incoming = new Order(1, 1, "Belvedere", Side.Buy, 99, 100u);
+
+        var result = ProRata.Instance.MatchIncoming(incoming, bidLimits, askLimits, orders);
 
         result.Fills.Should().BeEmpty();
         orders.Count.Should().Be(1);
@@ -96,9 +96,9 @@ public class ProRataTests
         result.Fills.Count.Should().Be(3);
 
         result.Fills.Single(f => f.AskOrderId == 2).FilledQuantity.Should().Be(50u);
-        result.Fills.Single(f => f.AskOrderId == 3).FilledQuantity.Should().Be(100u);    
+        result.Fills.Single(f => f.AskOrderId == 3).FilledQuantity.Should().Be(100u);
         result.Fills.Single(f => f.AskOrderId == 4).FilledQuantity.Should().Be(150u);
-        
+
         // aggressor SHOULD be fully consumed, removed from dict
         orders.ContainsKey(1).Should().BeFalse();
         bidLimits.Should().BeEmpty();
@@ -115,13 +115,13 @@ public class ProRataTests
         var orders = new Dictionary<long, OrderbookEntry>();
         var bidLimits = new SortedSet<Limit>(BidComparer);
         var askLimits = new SortedSet<Limit>(AskComparer);
-        
+
         askLimits.Add(BuildLevel(100, Side.Sell, orders, (2, 100u), (3, 200u), (4, 300u)));
 
-        var incoming = new Order(1,1, "HRT", Side.Buy, 100, 300u);
-        
+        var incoming = new Order(1, 1, "HRT", Side.Buy, 100, 300u);
+
         var result = ProRata.Instance.MatchIncoming(incoming, bidLimits, askLimits, orders);
-        
+
         result.Fills.Single(f => f.AskOrderId == 2).FilledQuantity.Should().Be(50u);
         result.Fills.Single(f => f.AskOrderId == 3).FilledQuantity.Should().Be(100u);
         result.Fills.Single(f => f.AskOrderId == 4).FilledQuantity.Should().Be(150u);

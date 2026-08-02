@@ -1,5 +1,4 @@
-﻿
-import {HttpClient} from '@angular/common/http';
+﻿import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 import {
@@ -7,11 +6,16 @@ import {
   OrderAck,
   PlaceOrderRequest,
   TradingSession,
+  Instrument
 } from './trading.models';
 
 @Injectable({providedIn: 'root'})
 export class TradingApiService {
   private readonly http = inject(HttpClient);
+
+  getInstruments(): Observable<Instrument[]> {
+    return this.http.get<Instrument[]>('/instruments');
+  }
 
   createSession(): Observable<TradingSession> {
     return this.http.post<TradingSession>(

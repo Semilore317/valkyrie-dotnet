@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 
-        <RootNamespace>Valkyrie.Instrument</RootNamespace>
-        <AssemblyName>Valkyrie.Instrument</AssemblyName>
+        <RootNamespace>Valkyrie.Instruments</RootNamespace>
+        <AssemblyName>Valkyrie.Instruments</AssemblyName>
     </PropertyGroup>
 </Project>

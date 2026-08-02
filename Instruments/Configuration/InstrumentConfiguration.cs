@@ -3,5 +3,6 @@
 public class InstrumentConfiguration
 {
     public long SecurityId { get; set; }
-    public string Symbol { get; set; } = string.Empty;
+    public string Ticker { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 }
