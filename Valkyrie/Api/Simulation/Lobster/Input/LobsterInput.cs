@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Api.Simulation.Lobster.Input;
+namespace Valkyrie.Api.Simulation.Lobster.Input;
 
 public class LobsterInput : IDisposable
 {

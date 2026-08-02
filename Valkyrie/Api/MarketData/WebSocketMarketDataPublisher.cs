@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Valkyrie.Api.Dto;
 using Valkyrie.MatchingEngine;
 using Valkyrie.Orders;
@@ -9,19 +9,19 @@ public sealed class WebSocketMarketDataPublisher(MarketDataHub Hub) : IMarketDat
 {
     // use camelCase
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    
+
     private static byte[] Serialize(Object value) => JsonSerializer.SerializeToUtf8Bytes(value, Json);
-    
+
     public void PublishTrade(TradeEvent trade)
     {
         Hub.BroadCast(trade.SecurityId, Serialize(new
         {
-            type = "trade", 
+            type = "trade",
             trade.SecurityId,
             trade.BidOrderId,
             trade.AskOrderId,
-            trade.Price, 
-            trade.Quantity, 
+            trade.Price,
+            trade.Quantity,
             trade.FilledAt,
             aggressorSide = ToWireSide(trade.AggressorSide)
         }));
@@ -31,11 +31,11 @@ public sealed class WebSocketMarketDataPublisher(MarketDataHub Hub) : IMarketDat
     {
         Hub.BroadCast(bookSnapshot.SecurityId, Serialize(new
         {
-            type = "book", 
+            type = "book",
             bookSnapshot.SecurityId,
-            bookSnapshot.Bid, 
-            bookSnapshot.Ask, 
-            bookSnapshot.Spread, 
+            bookSnapshot.Bid,
+            bookSnapshot.Ask,
+            bookSnapshot.Spread,
             bookSnapshot.Bids,
             bookSnapshot.Asks
         }));

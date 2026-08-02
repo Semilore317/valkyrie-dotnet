@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.OrderBook;
+namespace Valkyrie.OrderBook;
 
 public class OrderBookSpread
 {

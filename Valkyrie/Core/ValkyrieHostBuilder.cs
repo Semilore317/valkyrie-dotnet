@@ -22,9 +22,9 @@ public sealed class ValkyrieHostBuilder
 {
     public static IHost BuildValkyrie()
         => Host.CreateDefaultBuilder()
-            
+
             .UseContentRoot(AppContext.BaseDirectory)
-            
+
             // DI stuff
             .ConfigureServices((
                     context, // --> loaded configurations aka appsettings.json
@@ -33,7 +33,7 @@ public sealed class ValkyrieHostBuilder
                 =>
             {
                 services.AddOptions(); // enables the IOptions<T> system
-                
+
                 // reads from the appsettings.json directly
                 services.Configure<ValkyrieConfiguration>(
                     context.Configuration.GetSection(nameof(ValkyrieConfiguration)));

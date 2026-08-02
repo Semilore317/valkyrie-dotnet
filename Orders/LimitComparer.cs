@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Orders;
+namespace Valkyrie.Orders;
 
 /// <summary>
 /// due to the nature of the way we're presenting the bids and asks
@@ -19,7 +19,7 @@ public class BidLimitComparer : IComparer<Limit>
             return -1;
         if (y == null)
             return 1;
-        
+
         return y.Price.CompareTo(x.Price);
     }
 }
@@ -37,7 +37,7 @@ public class AskLimitComparer : IComparer<Limit>
             return -1;
         if (y == null)
             return 1;
-        
+
         return x.Price.CompareTo(y.Price);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -85,8 +85,8 @@ public class MarketDataSocketTests
 
         // incoming frames: book (from the resting null), then trade + book (from the cross)
         string? type = null;
-        while(type != "trade" ) 
-            using(var doc = await ReceiveJson(socket, cts.Token))
+        while (type != "trade")
+            using (var doc = await ReceiveJson(socket, cts.Token))
                 type = doc.RootElement.GetProperty("type").GetString();
 
         type.Should().Be("trade");

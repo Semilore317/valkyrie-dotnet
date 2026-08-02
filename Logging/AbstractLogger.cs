@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Logging;
+namespace Valkyrie.Logging;
 
 public abstract class AbstractLogger : ILogger
 {

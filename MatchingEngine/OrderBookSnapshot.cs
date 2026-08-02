@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.MatchingEngine;
+namespace Valkyrie.MatchingEngine;
 
 public record Level(long Price, long Quantity);
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 
 namespace Valkyrie.Api.MarketData;
 
@@ -16,7 +16,7 @@ public class MarketDataHub
 
     public void Unsubscribe(MarketDataConnection connection, long securityId)
     {
-        if(_bySecurity.TryGetValue(securityId, out var set))
+        if (_bySecurity.TryGetValue(securityId, out var set))
             set.TryRemove(connection.Id, out _);
     }
 
@@ -25,13 +25,13 @@ public class MarketDataHub
         foreach (var set in _bySecurity.Values)
             set.TryRemove(connection.Id, out _);
     }
-    
+
     public void BroadCast(long securityId, byte[] message)
     {
-        if(!_bySecurity.TryGetValue(securityId, out var set)) return;
+        if (!_bySecurity.TryGetValue(securityId, out var set)) return;
         foreach (var connection in set.Values)
             connection.Enqueue(message); // enqueue rather then sending
     }
-    
-    
+
+
 }

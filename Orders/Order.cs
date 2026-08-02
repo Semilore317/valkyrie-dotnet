@@ -1,14 +1,14 @@
 namespace Valkyrie.Orders;
 
-public class Order(long orderId, long securityId, string username, Side side, long price, uint initialQuantity) 
+public class Order(long orderId, long securityId, string username, Side side, long price, uint initialQuantity)
     : OrderCore(orderId, securityId, username)
 {
     public Side Side { get; } = side;
     public long Price { get; } = price; // in cents
     public uint InitialQuantity { get; } = initialQuantity;
-    public bool IsBuySide =>  Side == Side.Buy;
-    
-    
+    public bool IsBuySide => Side == Side.Buy;
+
+
     // currentQUantity initially matches initialQuantity
     public uint CurrentQuantity { get; private set; } = initialQuantity;
 
@@ -24,8 +24,8 @@ public class Order(long orderId, long securityId, string username, Side side, lo
             CurrentQuantity -= amount;
         }
     }
-    
-    public  void IncrementQuantity(uint amount)
+
+    public void IncrementQuantity(uint amount)
     {
         CurrentQuantity += amount;
     }

@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.MatchingEngine.Configuration;
+namespace Valkyrie.MatchingEngine.Configuration;
 
 public class MatchingEngineConfiguration
 {

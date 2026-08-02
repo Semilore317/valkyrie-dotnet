@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Api.Simulation.Lobster.Models;
+namespace Valkyrie.Api.Simulation.Lobster.Models;
 
 public enum LobsterEventType
 {

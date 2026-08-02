@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Valkyrie.Api.Simulation.Lobster.Models;
 using Valkyrie.Api.Simulation.Lobster.Services;
 using Valkyrie.MatchingEngine;

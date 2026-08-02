@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Valkyrie.MatchingEngine.Algorithms;
 using Valkyrie.Orders;
 
@@ -23,7 +23,7 @@ public class AllocateProRataTests
 
         foreach (var (orderId, quantity) in orders)
         {
-            var order = new Order(orderId,securityId: 1, username:"Belvedere", Side.Buy, price, quantity);
+            var order = new Order(orderId, securityId: 1, username: "Belvedere", Side.Buy, price, quantity);
             var entry = new OrderbookEntry(order, limit);
 
             entry.Previous = previous;
@@ -85,7 +85,7 @@ public class AllocateProRataTests
         var level = BuildLevel(100, (1, 100u), (2, 150u));
 
         var result = ProRata.AllocateProRata(level, 1000);
-        
+
         result.Single(r => r.Entry.OrderId == 1).Allocated.Should().Be(100u);
         result.Single(r => r.Entry.OrderId == 2).Allocated.Should().Be(150u);
     }
@@ -93,12 +93,12 @@ public class AllocateProRataTests
     [Fact]
     public static void RemainderDistribution_GoesToLargestFraction()
     {
-       var level = BuildLevel(100, (1, 100u), (2, 100u), (3, 100u)); 
-       
-       var result = ProRata.AllocateProRata(level, 100);
-       
-        result.Single(r => r.Entry.OrderId == 1).Allocated.Should().Be(34u);   
-        result.Single(r => r.Entry.OrderId == 2).Allocated.Should().Be(33u);   
+        var level = BuildLevel(100, (1, 100u), (2, 100u), (3, 100u));
+
+        var result = ProRata.AllocateProRata(level, 100);
+
+        result.Single(r => r.Entry.OrderId == 1).Allocated.Should().Be(34u);
+        result.Single(r => r.Entry.OrderId == 2).Allocated.Should().Be(33u);
         result.Single(r => r.Entry.OrderId == 3).Allocated.Should().Be(33u);
         result.Sum(r => r.Allocated).Should().Be(100u);
     }
@@ -123,7 +123,7 @@ public class AllocateProRataTests
         var level = BuildLevel(100, (1, restingQuantity));
 
         var result = ProRata.AllocateProRata(level, incomingQuantity);
-        
+
         result.Count.Should().Be(1);
         result[0].Allocated.Should().Be((Math.Min(incomingQuantity, restingQuantity)));
     }

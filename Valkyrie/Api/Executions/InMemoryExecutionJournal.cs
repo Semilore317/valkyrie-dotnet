@@ -1,4 +1,4 @@
-﻿using Valkyrie.MatchingEngine;
+using Valkyrie.MatchingEngine;
 using Valkyrie.Orders;
 
 namespace Valkyrie.Api.Executions;
@@ -71,8 +71,8 @@ public class InMemoryExecutionJournal : IExecutionJournal
 
     public void RemoveOrder(long orderId)
     {
-        lock(_gate)
-            _orders.Remove(orderId);    
+        lock (_gate)
+            _orders.Remove(orderId);
     }
 
     public IReadOnlyList<ExecutionRecord> GetExecutions(Guid sessionId, long? securityId = null)

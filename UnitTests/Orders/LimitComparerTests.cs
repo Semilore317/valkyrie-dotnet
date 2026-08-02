@@ -32,10 +32,10 @@ public class LimitComparerTests
         var comparer = AskLimitComparer.Comparer;
         var limit_1 = new Limit(1500);
         var limit_2 = new Limit(1600);
-        
+
         // Act
         int result = comparer.Compare(limit_1, limit_2);
-        
+
         // Assert
         result.Should().BeLessThan(0, "Lower ask prices must sort before higher ask prices.");
     }
@@ -49,11 +49,11 @@ public class LimitComparerTests
 
         // Act & Assert
         0.Should().Be(comparer.Compare(null, null));
-        
+
         // Assert.True(booleanCondition) asserts that the condition evaluates to true.
         // null is less than a valid limit, so x (null) comes before y. Compare returns a negative number.
         0.Should().BeGreaterThan(comparer.Compare(null, validLimit));
-        
+
         // valid limit is greater than null, so y (null) comes after x. Compare returns a positive number.
         Assert.True(comparer.Compare(validLimit, null) > 0, "A valid limit compared to null must sort last.");
         0.Should().BeLessThan(comparer.Compare(validLimit, null));

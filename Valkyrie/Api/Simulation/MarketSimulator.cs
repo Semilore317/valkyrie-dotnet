@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using Valkyrie.Core.Configuration;
 using Valkyrie.Logging;
 

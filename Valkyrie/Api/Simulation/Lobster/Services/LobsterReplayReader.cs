@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Valkyrie.Api.Simulation.Lobster.Enums;
 using Valkyrie.Api.Simulation.Lobster.Input;
 using Valkyrie.Api.Simulation.Lobster.Models;
@@ -77,7 +77,7 @@ public sealed class LobsterReplayReader
 
             previousSeconds = message.SecondsAfterMidnight;
 
-            var snapshot  = LobsterOrderBookParser.Parse(orderBookLine, lineNumber, instrument.SecurityId, instrument.BookDepth);
+            var snapshot = LobsterOrderBookParser.Parse(orderBookLine, lineNumber, instrument.SecurityId, instrument.BookDepth);
             yield return new LobsterReplayFrame(
                 lineNumber,
                 ToHistoricalTimestamp(instrument.SessionMidnight, message.SecondsAfterMidnight),

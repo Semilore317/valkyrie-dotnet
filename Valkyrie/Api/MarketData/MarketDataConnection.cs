@@ -1,4 +1,4 @@
-﻿using System.Net.WebSockets;
+using System.Net.WebSockets;
 using System.Threading.Channels;
 
 namespace Valkyrie.Api.MarketData;
@@ -26,10 +26,10 @@ public sealed class MarketDataConnection(WebSocket socket)
 
     public async Task SendLoopAsync(CancellationToken token)
     {
-        await foreach(var message in _outbound.Reader.ReadAllAsync(token))
-            await socket.SendAsync(message, WebSocketMessageType.Text, endOfMessage:true, token);
+        await foreach (var message in _outbound.Reader.ReadAllAsync(token))
+            await socket.SendAsync(message, WebSocketMessageType.Text, endOfMessage: true, token);
     }
-    
+
     public void Complete()
     {
         _outbound.Writer.TryComplete();

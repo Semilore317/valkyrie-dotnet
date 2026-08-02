@@ -1,4 +1,4 @@
-﻿using Valkyrie.Instruments;
+using Valkyrie.Instruments;
 
 namespace Valkyrie.Api;
 

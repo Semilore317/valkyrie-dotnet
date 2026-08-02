@@ -1,8 +1,8 @@
-﻿namespace Valkyrie.Core.Configuration
+namespace Valkyrie.Core.Configuration
 {
     class ValkyrieConfiguration
     {
-    public ValkyrieSettings? ValkyrieSettings { get; set; }
+        public ValkyrieSettings? ValkyrieSettings { get; set; }
     }
 
     class TradingServerSettings

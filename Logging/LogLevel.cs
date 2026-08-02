@@ -1,10 +1,10 @@
-﻿namespace Valkyrie.Logging
+namespace Valkyrie.Logging
 {
-    public enum LogLevel 
+    public enum LogLevel
     {
-       Debug,
-       Info,
-       Warning,
-       Error
+        Debug,
+        Info,
+        Warning,
+        Error
     }
 }

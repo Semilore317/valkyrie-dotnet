@@ -1,4 +1,4 @@
-﻿using Valkyrie.Api.Dto;
+using Valkyrie.Api.Dto;
 using Valkyrie.Api.Simulation.Lobster.Models;
 using Valkyrie.Orders;
 

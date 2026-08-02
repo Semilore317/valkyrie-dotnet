@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using Valkyrie.Api.Dto;
 using Valkyrie.Api.MarketData;
 using Valkyrie.Api.Simulation.Lobster.Models;

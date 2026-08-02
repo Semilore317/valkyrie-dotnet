@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks.Dataflow;
+using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Options;
 using Valkyrie.Logging.Configuration;
 
@@ -10,16 +10,16 @@ public class TextLogger : AbstractLogger, ITextLogger
     {
         var loggingConfiguration1 = loggingConfiguration.Value ?? throw new ArgumentNullException(nameof(loggingConfiguration));
         var config = loggingConfiguration1.TextLoggerConfiguration ?? throw new InvalidOperationException("TextLoggerConfiguration is missing.");
-        
+
         // create the directory (if it doesn't exist) and start logging in a file
-        
+
         string dateDirectoryName = DateTime.Now.ToString("yyyy-MM-dd");
-        string targetDirectory = Path.Combine(config.Directory ,dateDirectoryName);
+        string targetDirectory = Path.Combine(config.Directory, dateDirectoryName);
         string logFileName = $"{config.FileName}_{DateTime.Now:HH_mm_ss}.{config.FileExtension.TrimStart('.')}";
         string filePath = Path.Combine(targetDirectory, logFileName);
-    
+
         Directory.CreateDirectory(targetDirectory);
-    
+
         _ = Task.Run(() => logAsync(filePath, _logQueue, _tokenSource.Token));
     }
 
@@ -73,7 +73,7 @@ public class TextLogger : AbstractLogger, ITextLogger
         //destroy everything that hasn't been GC'd and is available for destruction
         Dispose(false);
     }
-    
+
     public void Dispose()
     {
         Dispose(true);
@@ -102,8 +102,8 @@ public class TextLogger : AbstractLogger, ITextLogger
             _tokenSource.Cancel();
             _tokenSource.Dispose();
         }
-        
-        
+
+
         // remove unmanaged resources(external stuff) e.g db, filestream atc
     }
 

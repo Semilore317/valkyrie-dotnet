@@ -1,4 +1,4 @@
-﻿using Valkyrie.Orders;
+using Valkyrie.Orders;
 
 namespace Valkyrie.Api.Executions;
 

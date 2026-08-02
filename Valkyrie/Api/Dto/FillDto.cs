@@ -1,4 +1,4 @@
-﻿namespace Valkyrie.Api.Dto;
+namespace Valkyrie.Api.Dto;
 
 public record FillDto(
     long BidOrderId,
