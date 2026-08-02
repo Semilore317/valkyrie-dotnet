@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: valkyrie-api
+    runtime: docker
+    plan: free
+
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+
+      - key: ASPNETCORE_URLS
+        value: http://0.0.0.0:10000
+
+      - key: MarketSimulatorConfiguration__Enabled
+        value: "true"
+
+      - key: MarketSimulatorConfiguration__Source
+        value: Synthetic
+
+      - key: LoggingConfiguration__LoggerType
+        value: Console
+
+      - key: Cors__AllowedOrigins__0
+        sync: false

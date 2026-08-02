@@ -1,13 +1,14 @@
 ﻿import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { buildHttpUrl } from './backend-url';
 import {
   Execution,
+  Instrument,
+  MarketDataStatus,
   OrderAck,
   PlaceOrderRequest,
   TradingSession,
-  Instrument,
-  MarketDataStatus,
 } from './trading.models';
 
 @Injectable({ providedIn: 'root' })
@@ -15,19 +16,19 @@ export class TradingApiService {
   private readonly http = inject(HttpClient);
 
   getInstruments(): Observable<Instrument[]> {
-    return this.http.get<Instrument[]>('/instruments');
+    return this.http.get<Instrument[]>(buildHttpUrl('/instruments'));
   }
 
   getMarketDataStatus(): Observable<MarketDataStatus> {
-    return this.http.get<MarketDataStatus>('/market-data/status');
+    return this.http.get<MarketDataStatus>(buildHttpUrl('/market-data/status'));
   }
 
   createSession(): Observable<TradingSession> {
-    return this.http.post<TradingSession>('/sessions', {});
+    return this.http.post<TradingSession>(buildHttpUrl('/sessions'), {});
   }
 
   getExecutions(sessionId: string, securityId?: number): Observable<Execution[]> {
-    const url = `/sessions/${sessionId}/executions`;
+    const url = buildHttpUrl(`/sessions/${sessionId}/executions`);
 
     if (securityId === undefined) return this.http.get<Execution[]>(url);
 
@@ -37,11 +38,11 @@ export class TradingApiService {
   }
 
   placeOrder(order: PlaceOrderRequest): Observable<OrderAck> {
-    return this.http.post<OrderAck>('/orders', order);
+    return this.http.post<OrderAck>(buildHttpUrl('/orders'), order);
   }
 
   cancelOrder(securityId: number, orderId: number, username: string): Observable<void> {
-    return this.http.delete<void>(`/instruments/${securityId}/orders/${orderId}`, {
+    return this.http.delete<void>(buildHttpUrl(`/instruments/${securityId}/orders/${orderId}`), {
       params: { username },
     });
   }
