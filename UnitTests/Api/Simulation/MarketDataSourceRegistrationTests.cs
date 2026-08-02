@@ -34,5 +34,5 @@ public sealed class MarketDataSourceRegistrationTests
         selectedSource.GetType()
             .Should().Be(expectedType);
     }
-    
+
 }

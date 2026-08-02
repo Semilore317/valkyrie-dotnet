@@ -23,7 +23,7 @@ public class LobsterMarketTradeMapperTests
     {
         var frame = CreateFrame(eventType, direction);
         var trade = LobsterMarketTradeMapper.Map(frame);
-        
+
         trade.Should().NotBeNull();
         trade!.SecurityId.Should().Be(2);
         trade.Price.Should().Be(58_543.24m);
@@ -31,7 +31,7 @@ public class LobsterMarketTradeMapperTests
         trade.OccurredAt.Should().Be(HistoricalTimeStamp);
         trade.AggressorSide.Should().Be(expectedAggressorSide);
     }
-    
+
     [Theory]
     [InlineData(LobsterEventType.Submission)]
     [InlineData(LobsterEventType.PartialCancellation)]
@@ -43,9 +43,9 @@ public class LobsterMarketTradeMapperTests
         var frame = CreateFrame(eventType, LobsterDirection.Sell);
         var trade = LobsterMarketTradeMapper.Map(frame);
         trade.Should().BeNull();
-        
+
     }
-    
+
     private static LobsterReplayFrame CreateFrame(
         LobsterEventType eventType,
         LobsterDirection direction

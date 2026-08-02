@@ -52,7 +52,7 @@ public sealed class LobsterReplayReader
 
         long lineNumber = 0;
         decimal? previousSeconds = null;
-        
+
         while (true)
         {
             token.ThrowIfCancellationRequested();
@@ -109,7 +109,7 @@ public sealed class LobsterReplayReader
             MidpointRounding.ToEven));
         return sessionMidnight.AddTicks(ticks);
     }
-    
+
     private static void ValidateInstrument(HistoricalReplayInstrument instrument)
     {
         if (instrument.SecurityId <= 0)
