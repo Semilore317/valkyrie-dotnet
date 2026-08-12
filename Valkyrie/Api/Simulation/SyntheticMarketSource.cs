@@ -184,6 +184,7 @@ public class SyntheticMarketSource(
             }
             catch (OperationCanceledException e)
             {
+                logger.Info("MarketSimulator", $"Operation cancelled {e}");
                 break; // graceful shutdown
             }
             catch (Exception e)
